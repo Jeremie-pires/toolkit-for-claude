@@ -59,7 +59,7 @@
 - [x] `--record` writes `{ "<project path>": { "lastDream": "<ISO>" } }` without losing other projects; `--cleanup` deletes only a file in the temp folder.
 
 **Verification:**
-- [x] `node --test` passes$
+- [x] `node --test` passes
 - [x] Real run on this repo: under 30 KB, under 10 s
 
 **Dependencies:** Task 3

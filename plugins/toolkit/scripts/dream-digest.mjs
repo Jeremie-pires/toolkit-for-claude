@@ -272,7 +272,7 @@ function plainLine({ date, tag, text }) {
 const byCount = (map) => [...map].sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0]));
 
 function usageLine(map) {
-  return byCount(map).map(([name, n]) => `${name} ${n}`).join(' · ') || '(none)';
+  return redact(byCount(map).map(([name, n]) => `${name} ${n}`).join(' · ')) || '(none)';
 }
 
 export function renderDigest({ project, since, until, sessions, stats, found }, maxBytes = DIGEST_MAX_BYTES) {
@@ -293,7 +293,7 @@ export function renderDigest({ project, since, until, sessions, stats, found }, 
     { title: '## Skills and commands used', items: [`- Skills: ${usageLine(found.skills)}`, `- Commands: ${usageLine(found.commands)}`] },
     { title: `## User messages (${found.userMessages.length})`, items: found.userMessages.map(itemLine) },
   ];
-  return redact(fitToCap(header, sections, maxBytes));
+  return fitToCap(header.map(redact), sections, maxBytes);
 }
 
 const lineBytes = (line) => Buffer.byteLength(line, 'utf8') + 1;
