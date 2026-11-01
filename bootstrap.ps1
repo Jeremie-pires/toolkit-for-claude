@@ -1,11 +1,11 @@
 <#
 .SYNOPSIS
-  Sync this machine's ~/.claude with the claude-kit repo. Idempotent.
+  Sync this machine's ~/.claude with the toolkit-for-claude repo. Idempotent.
 
 .DESCRIPTION
   Default = PREVIEW (nothing written, shows the diff). Use -Apply to write.
   First run on a new PC (use your fork):
-    gh repo clone <you>/claude-kit $HOME\.claude-kit
+    gh repo clone <you>/toolkit-for-claude $HOME\.claude-kit
     & $HOME\.claude-kit\bootstrap.ps1            # preview
     & $HOME\.claude-kit\bootstrap.ps1 -Apply     # apply
   After that, an async SessionStart hook runs it with -Apply -Quiet. In that mode the
@@ -131,7 +131,7 @@ if (Test-Path (Join-Path $KitDir '.git')) {
     }
   }
 } else {
-  if (-not $Apply -or -not $Repo) { Say "Kit not found at $KitDir. Clone your fork first: gh repo clone <you>/claude-kit $KitDir"; exit 1 }
+  if (-not $Apply -or -not $Repo) { Say "Kit not found at $KitDir. Clone your fork first: gh repo clone <you>/toolkit-for-claude $KitDir"; exit 1 }
   $null = & git clone --quiet $Repo $KitDir 2>&1
   if ($LASTEXITCODE -ne 0) { Say '! clone failed (auth? network?)'; exit 1 }
   $lastPull = Get-Date

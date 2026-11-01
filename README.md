@@ -1,4 +1,4 @@
-# claude-kit
+# toolkit-for-claude
 
 A toolbox for Claude Code that you keep in one Git repo and sync to every machine you work on. It holds your working rules, a few commands and skills, shared settings and a status line.
 
@@ -21,7 +21,7 @@ You need Windows 10/11 with PowerShell 5.1+, [Git for Windows](https://git-scm.c
 2. **Clone your fork** to the path the kit expects:
 
    ```powershell
-   git clone https://github.com/<you>/claude-kit.git $HOME\.claude-kit
+   git clone https://github.com/<you>/toolkit-for-claude.git $HOME\.claude-kit
    ```
 
 3. **Preview, then apply:**
@@ -33,13 +33,13 @@ You need Windows 10/11 with PowerShell 5.1+, [Git for Windows](https://git-scm.c
 
 4. **Restart Claude Code** and run `/plugin list`. You should see `toolkit@workshop`, `caveman@caveman` and `agent-skills@addy-agent-skills`. Claude Code may show its own one-time prompts at first launch; the kit doesn't cause them.
 
-If your fork is private, clone it with the GitHub CLI instead: `gh repo clone <you>/claude-kit $HOME\.claude-kit` (after `gh auth login`).
+If your fork is private, clone it with the GitHub CLI instead: `gh repo clone <you>/toolkit-for-claude $HOME\.claude-kit` (after `gh auth login`).
 
 ### Let Claude Code install it for you
 
 Open Claude Code in any folder and send:
 
-> Install my claude-kit: clone `https://github.com/<you>/claude-kit.git` to `$HOME/.claude-kit`, then follow the section "For AI agents" of `~/.claude-kit/README.md`. Show me the preview before applying anything.
+> Install my toolkit-for-claude: clone `https://github.com/<you>/toolkit-for-claude.git` to `$HOME/.claude-kit`, then follow the section "For AI agents" of `~/.claude-kit/README.md`. Show me the preview before applying anything.
 
 Send the same prompt with "update" instead of "install" to update later.
 
@@ -48,7 +48,7 @@ Send the same prompt with "update" instead of "install" to update later.
 To get the commands and skills without the rules, settings and sync, run this inside Claude Code:
 
 ```
-/plugin install toolkit --marketplace Jeremie-pires/claude-kit
+/plugin install toolkit --marketplace Jeremie-pires/toolkit-for-claude
 ```
 
 The plugin contains only Markdown commands and skills. It runs no code on your machine.
@@ -56,7 +56,7 @@ The plugin contains only Markdown commands and skills. It runs no code on your m
 ## What's inside
 
 ```
-claude-kit/
+toolkit-for-claude/
 ├─ .claude-plugin/marketplace.json   the "workshop" marketplace
 ├─ plugins/toolkit/                  the "toolkit" plugin
 │  ├─ commands/                      /toolkit:add-rule, :load-state, :save-state, :setup-memory
