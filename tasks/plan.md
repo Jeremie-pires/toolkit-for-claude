@@ -25,7 +25,7 @@ dream-reminder (statusline.js reads claude-kit-dream.json)
 See [todo.md](todo.md) for acceptance criteria and verification.
 
 ### Phase 1: Guard
-- [ ] Task 1: Hold back executable plugin files
+- [x] Task 1: Hold back executable plugin files
 
 ### Checkpoint 1
 - [ ] Path table passes; commit; user reviews

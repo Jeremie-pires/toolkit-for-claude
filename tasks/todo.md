@@ -4,19 +4,20 @@
 **Description:** Widen `$reviewPattern` in `bootstrap.ps1` so auto-sync holds back any executable file under `plugins/`, per [SPEC-review-guard](../docs/specs/SPEC-review-guard.md).
 
 **Acceptance criteria:**
-- [ ] Every row of the spec's path table gives the expected result.
-- [ ] The `.DESCRIPTION` block, README security notes and `AI_STATE.md` decision describe the wider rule.
+- [x] Every row of the spec's path table gives the expected result.
+- [x] The `.DESCRIPTION` block, README security notes and `AI_STATE.md` decision describe the wider rule.
 
 **Verification:**
-- [ ] `powershell -NoProfile -File tests/review-guard.tests.ps1` passes
-- [ ] `& ./bootstrap.ps1` (preview) still runs without error
+- [x] `powershell -NoProfile -File tests/review-guard.tests.ps1` passes
+- [x] `& ./bootstrap.ps1` (preview) still runs without error
 
 **Dependencies:** None
 **Files:** `bootstrap.ps1`, `tests/review-guard.tests.ps1`, `README.md`, `AI_STATE.md`
 **Scope:** S
 
 ## Checkpoint 1
-- [ ] Tests pass, commit, user review
+- [x] Tests pass, commit
+- [ ] User review
 
 ## Task 2: Digest skeleton, user messages end to end
 **Description:** Create `dream-digest.mjs`: parse arguments, derive the slug, find the transcripts, filter by window, read lines defensively, extract user text messages, write the Markdown digest to the temp folder and print its path.
