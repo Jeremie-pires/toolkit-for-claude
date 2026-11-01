@@ -125,7 +125,9 @@ test('run writes the digest to the temp folder', () => {
   const { code, message } = run(['--transcripts', proj, '--since', '2026-10-15', '--project', '/x/kit'], now);
   assert.equal(code, 0);
   assert.equal(path.dirname(message), os.tmpdir());
-  assert.match(fs.readFileSync(message, 'utf8'), /Add a login page/);
+  const written = fs.readFileSync(message, 'utf8');
+  assert.match(written, /Add a login page/);
+  assert.ok(written.includes(`Auto-memory folder: ${path.join(proj, 'memory')}`));
   fs.unlinkSync(message);
 });
 

@@ -36,10 +36,10 @@ See [todo.md](todo.md) for acceptance criteria and verification.
 - [x] Task 4: Redaction, size cap, record and cleanup
 
 ### Checkpoint 2
-- [ ] `node --test` passes; real run on this repo under 30 KB and 10 s; user reads the digest
+- [x] `node --test` passes; real run on this repo under 30 KB and 10 s; user reads the digest
 
 ### Phase 3: Command
-- [ ] Task 5: `/toolkit:dream` command
+- [x] Task 5: `/toolkit:dream` command
 - [ ] Task 6: Dry run on this repo and docs
 
 ### Checkpoint 3

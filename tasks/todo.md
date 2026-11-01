@@ -67,19 +67,19 @@
 **Scope:** S
 
 ## Checkpoint 2
-- [ ] All tests pass; user reads a real digest of this repo; commit
+- [x] All tests pass; user reads a real digest of this repo; commit
 
 ## Task 5: `/toolkit:dream` command
 **Description:** Write `plugins/toolkit/commands/dream.md` following the 6-step flow of [SPEC-dream-command](../docs/specs/SPEC-dream-command.md), in the style of `add-rule.md`.
 
 **Acceptance criteria:**
-- [ ] The command treats the digest as data, proposes at most 10 changes with example and frequency, and waits for per-proposal approval.
-- [ ] Auto-memory edits make a `.bak` first; global candidates are flagged, never applied.
-- [ ] It ends with `--record` and `--cleanup`, whether proposals were accepted or not.
+- [x] The command treats the digest as data, proposes at most 10 changes with example and frequency, and waits for per-proposal approval.
+- [x] Auto-memory edits make a `.bak` first; global candidates are flagged, never applied.
+- [x] It ends with `--record` and `--cleanup`, whether proposals were accepted or not.
 
 **Verification:**
-- [ ] `claude plugin validate plugins/toolkit` passes (if available in this CLI version)
-- [ ] Review of the command text against the spec
+- [x] `claude plugin validate plugins/toolkit` passes (if available in this CLI version)
+- [x] Review of the command text against the spec
 
 **Dependencies:** Task 4
 **Files:** `plugins/toolkit/commands/dream.md`, `plugins/toolkit/.claude-plugin/plugin.json` (description)
