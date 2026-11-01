@@ -48,7 +48,7 @@ The script owns every deterministic step, so the model never edits JSON or delet
 ## Commands
 - Run: `node plugins/toolkit/scripts/dream-digest.mjs [--project <dir>] [--since <date>] [--transcripts <dir>]`
 - Housekeeping: `node plugins/toolkit/scripts/dream-digest.mjs --record [--project <dir>]`, `... --cleanup <file>`
-- Test: `node --test tests/`
+- Test: `node --test`
 
 ## Project structure
 - `plugins/toolkit/scripts/dream-digest.mjs`: the script (held back by `review-guard`).

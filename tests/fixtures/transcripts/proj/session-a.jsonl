@@ -1,0 +1,12 @@
+{"type":"permission-mode","permissionMode":"default","sessionId":"a"}
+{"type":"user","timestamp":"2026-10-20T09:00:00.000Z","sessionId":"a","message":{"role":"user","content":"Add a login page"}}
+{"type":"assistant","timestamp":"2026-10-20T09:00:05.000Z","sessionId":"a","message":{"role":"assistant","content":[{"type":"thinking","thinking":"secret plan"},{"type":"text","text":"Sure, I will use npm."}]}}
+{"type":"user","timestamp":"2026-10-20T09:01:00.000Z","sessionId":"a","message":{"role":"user","content":[{"type":"text","text":"non, utilise pnpm pas npm"}]}}
+{"type":"user","timestamp":"2026-10-20T09:02:00.000Z","sessionId":"a","message":{"role":"user","content":"<command-message>toolkit:load-state</command-message>\n<command-name>/toolkit:load-state</command-name>"}}
+{"type":"user","timestamp":"2026-10-20T09:02:01.000Z","sessionId":"a","isMeta":true,"message":{"role":"user","content":[{"type":"text","text":"Read AI_STATE.md at the project root."}]}}
+{"type":"user","timestamp":"2026-10-20T09:03:00.000Z","sessionId":"a","isCompactSummary":true,"message":{"role":"user","content":"Summary of the earlier conversation"}}
+{"type":"future-record","timestamp":"2026-10-20T09:04:00.000Z","sessionId":"a"}
+{"type":"future-record","timestamp":"2026-10-20T09:04:01.000Z","sessionId":"a"}
+{"type":"user","timestamp":"2026-10-20T09:05:00.000Z","sessio
+{"no":"type field"}
+{"type":"attachment","timestamp":"2026-10-20T09:06:00.000Z","sessionId":"a","attachment":{"type":"date"}}

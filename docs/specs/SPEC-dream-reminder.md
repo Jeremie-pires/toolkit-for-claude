@@ -14,7 +14,7 @@ Remind the user to run `/toolkit:dream` without spending tokens: the status line
 - Projects that are not git repositories show nothing, so home or temp folders stay quiet.
 
 ## Commands
-- Test: `node --test tests/`
+- Test: `node --test`
 - Manual check: run a dream, restart Claude Code, confirm the segment disappears.
 
 ## Project structure

@@ -17,19 +17,19 @@
 
 ## Checkpoint 1
 - [x] Tests pass, commit
-- [ ] User review
+- [x] User review
 
 ## Task 2: Digest skeleton, user messages end to end
 **Description:** Create `dream-digest.mjs`: parse arguments, derive the slug, find the transcripts, filter by window, read lines defensively, extract user text messages, write the Markdown digest to the temp folder and print its path.
 
 **Acceptance criteria:**
-- [ ] Slug derivation matches the observed rule; `--transcripts` overrides it.
-- [ ] Unknown record types and malformed lines are skipped and counted in the header.
-- [ ] Missing folder or no readable record: exit code 2 with a clear message.
+- [x] Slug derivation matches the observed rule; `--transcripts` overrides it.
+- [x] Unknown record types and malformed lines are skipped and counted in the header.
+- [x] Missing folder or no readable record: exit code 2 with a clear message.
 
 **Verification:**
-- [ ] `node --test tests/` passes (slug, window, user messages, unknown and malformed lines, exit 2)
-- [ ] Manual: run on this repo, open the printed file
+- [x] `node --test` passes (slug, window, user messages, unknown and malformed lines, exit 2)
+- [x] Manual: run on this repo, open the printed file
 
 **Dependencies:** Task 1
 **Files:** `plugins/toolkit/scripts/dream-digest.mjs`, `tests/dream-digest.test.mjs`, `tests/fixtures/transcripts/*.jsonl`
@@ -44,7 +44,7 @@
 - [ ] Skills and slash commands are counted.
 
 **Verification:**
-- [ ] `node --test tests/` passes with one fixture case per extractor
+- [ ] `node --test` passes with one fixture case per extractor
 
 **Dependencies:** Task 2
 **Files:** `plugins/toolkit/scripts/dream-digest.mjs`, `tests/dream-digest.test.mjs`, `tests/fixtures/transcripts/*.jsonl`
@@ -59,7 +59,7 @@
 - [ ] `--record` writes `{ "<project path>": { "lastDream": "<ISO>" } }` without losing other projects; `--cleanup` deletes only a file in the temp folder.
 
 **Verification:**
-- [ ] `node --test tests/` passes
+- [ ] `node --test` passes
 - [ ] Real run on this repo: under 30 KB, under 10 s
 
 **Dependencies:** Task 3
@@ -111,7 +111,7 @@
 - [ ] Non-git folders show nothing; a missing or corrupt file never breaks the line.
 
 **Verification:**
-- [ ] `node --test tests/` passes (spawned status line, temporary home folder)
+- [ ] `node --test` passes (spawned status line, temporary home folder)
 - [ ] Manual: restart Claude Code after `-Apply`, segment matches the last dream date
 
 **Dependencies:** Task 4 (record format)

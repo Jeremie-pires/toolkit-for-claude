@@ -1,0 +1,1 @@
+{"type":"user","timestamp":"2026-10-25T10:00:00.000Z","sessionId":"b","message":{"role":"user","content":[{"type":"text","text":"Write the tests first"},{"type":"image","source":{"type":"base64","data":"AAAA"}}]}}

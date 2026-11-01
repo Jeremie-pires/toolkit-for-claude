@@ -28,15 +28,15 @@ See [todo.md](todo.md) for acceptance criteria and verification.
 - [x] Task 1: Hold back executable plugin files
 
 ### Checkpoint 1
-- [ ] Path table passes; commit; user reviews
+- [x] Path table passes; commit; user reviews
 
 ### Phase 2: Digest
-- [ ] Task 2: Digest skeleton, user messages end to end
+- [x] Task 2: Digest skeleton, user messages end to end
 - [ ] Task 3: Corrections, denials, tool errors, skills
 - [ ] Task 4: Redaction, size cap, record and cleanup
 
 ### Checkpoint 2
-- [ ] `node --test tests/` passes; real run on this repo under 30 KB and 10 s; user reads the digest
+- [ ] `node --test` passes; real run on this repo under 30 KB and 10 s; user reads the digest
 
 ### Phase 3: Command
 - [ ] Task 5: `/toolkit:dream` command
