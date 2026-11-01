@@ -91,7 +91,7 @@
 **Acceptance criteria:**
 - [ ] Rejecting all writes only `claude-kit-dream.json`; the digest file is gone.
 - [ ] An accepted proposal is applied as shown.
-- [ ] README lists `/toolkit:dream`, its cost model and the 30-day transcript limit.
+- [x] README lists `/toolkit:dream`, its cost model and the 30-day transcript limit.
 
 **Verification:**
 - [ ] Manual run, `git status` shows only the expected changes
@@ -107,11 +107,11 @@
 **Description:** Add the dream age segment to `global/statusline.js`, per [SPEC-dream-reminder](../docs/specs/SPEC-dream-reminder.md).
 
 **Acceptance criteria:**
-- [ ] The 4 states render as specified (nothing, `dream Nd`, `dream Nd!`, `dream?`).
-- [ ] Non-git folders show nothing; a missing or corrupt file never breaks the line.
+- [x] The 4 states render as specified (nothing, `dream Nd`, `dream Nd!`, `dream?`).
+- [x] Non-git folders show nothing; a missing or corrupt file never breaks the line.
 
 **Verification:**
-- [ ] `node --test` passes (spawned status line, temporary home folder)
+- [x] `node --test` passes (spawned status line, temporary home folder)
 - [ ] Manual: restart Claude Code after `-Apply`, segment matches the last dream date
 
 **Dependencies:** Task 4 (record format)

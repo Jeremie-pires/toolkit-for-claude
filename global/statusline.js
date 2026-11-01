@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 // Claude Code status line: one Node process per refresh, no external deps.
-// Line 1: model | project | branch | caveman mode | kit sync warnings
+// Line 1: model | project | branch | caveman mode | kit sync warnings | days since the last /toolkit:dream
 // Line 2: context bar | quota (5h/7d windows, or a spend limit when one is set) | session cost and duration
 'use strict';
 
@@ -89,6 +89,26 @@ function kitWarnings() {
   }
 }
 
+// Days since /toolkit:dream last ran for this project (claude-kit-dream.json), or null if never
+function dreamAge(projectDir) {
+  try {
+    const records = JSON.parse(fs.readFileSync(path.join(os.homedir(), '.claude', 'claude-kit-dream.json'), 'utf8'));
+    const norm = (p) => (process.platform === 'win32' ? path.resolve(p).toLowerCase() : path.resolve(p));
+    const key = Object.keys(records).find((k) => norm(k) === norm(projectDir));
+    const last = Date.parse(records[key]?.lastDream);
+    return Number.isNaN(last) ? null : Math.floor((Date.now() - last) / 86400000);
+  } catch {
+    return null;
+  }
+}
+
+function dreamReminder(projectDir) {
+  const age = dreamAge(projectDir);
+  if (age === null) return `${C.white}dream?${R}`;
+  if (age <= 7) return '';
+  return age > 25 ? `${C.red}dream ${age}d!${R}` : `${C.orange}dream ${age}d${R}`;
+}
+
 function quota(limits) {
   if (!limits) return '';
   const parts = [];
@@ -119,6 +139,8 @@ const dir = d.workspace?.project_dir || d.workspace?.current_dir || d.cwd || pro
 const branch = gitBranch(dir);
 const mode = cavemanMode();
 const kitWarn = kitWarnings();
+// Only git projects get the reminder, so home or temp folders stay quiet
+const dream = branch ? dreamReminder(dir) : '';
 
 const line1 = [
   `${C.cyan}${BOLD}${d.model?.display_name || '?'}${R}`,
@@ -126,6 +148,7 @@ const line1 = [
   branch && `${C.white}⎇ ${branch}${R}`,
   mode && mode !== 'off' && `${DIM}caveman:${mode}${R}`,
   kitWarn > 0 && `${C.orange}kit! (${kitWarn}, see ~/.claude/claude-kit-sync.json)${R}`,
+  dream,
 ].filter(Boolean).join(SEP);
 
 const used = d.context_window?.used_percentage;

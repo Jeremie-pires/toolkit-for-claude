@@ -46,7 +46,7 @@ See [todo.md](todo.md) for acceptance criteria and verification.
 - [ ] Dream run end to end with the user approving proposals
 
 ### Phase 4: Reminder
-- [ ] Task 7: Status line segment
+- [x] Task 7: Status line segment
 
 ### Checkpoint 4 (complete)
 - [ ] All spec success criteria met; push; `-Apply` on this machine; `/toolkit:save-state`
