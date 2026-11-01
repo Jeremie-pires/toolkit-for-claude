@@ -59,7 +59,8 @@ The plugin contains only Markdown commands and skills. It runs no code on your m
 toolkit-for-claude/
 ├─ .claude-plugin/marketplace.json   the "workshop" marketplace
 ├─ plugins/toolkit/                  the "toolkit" plugin
-│  ├─ commands/                      /toolkit:add-rule, :load-state, :save-state, :setup-memory
+│  ├─ commands/                      /toolkit:add-rule, :dream, :load-state, :save-state, :setup-memory
+│  ├─ scripts/dream-digest.mjs       local transcript digest for /toolkit:dream (Node)
 │  └─ skills/                        references, humanizer, find-skills
 ├─ global/
 │  ├─ CLAUDE.md                      global working rules (copied to ~/.claude)
@@ -76,6 +77,9 @@ Commands:
 | `/toolkit:save-state` | Writes this session's progress, next steps and decisions to `AI_STATE.md` |
 | `/toolkit:load-state` | Reads `AI_STATE.md` and gives the exact next step |
 | `/toolkit:add-rule <rule>` | Adds a rule to the global or project `CLAUDE.md`, checks for conflicts, shows the diff first |
+| `/toolkit:dream [--since <date>]` | Reviews this project's recent sessions and proposes changes to its `CLAUDE.md`, `AI_STATE.md` and auto-memory, one approval per change |
+
+**About `/toolkit:dream`.** A local Node script reads the project's transcripts (`~/.claude/projects/<project>/`) and writes a digest of at most 30 KB to the temp folder: corrections, denied or interrupted tool calls, grouped tool errors, skills used and user messages, with known secret formats redacted. That step costs no tokens. One agent then reads the digest and the project's rules, state and memory, and proposes at most 10 changes, each with an example and its frequency. Patterns seen once are ignored, and rules that fit every project are only flagged: add them with `/toolkit:add-rule`. The command never commits and never edits the global `CLAUDE.md`. It covers the sessions since the last dream, or the last 30 days. Claude Code deletes transcripts after `cleanupPeriodDays` (30 by default), so dream at least monthly or raise that setting.
 
 The kit also enables two third-party plugins: [`agent-skills`](https://github.com/addyosmani/agent-skills) (spec, plan, build, test and review workflows) and [`caveman`](https://github.com/JuliusBrussee/caveman) (a terse chat voice that saves tokens). The global rules route work between them. Remove either one from `global/settings.base.json` if you don't want it, and update the skills table in `global/CLAUDE.md` to match.
 
