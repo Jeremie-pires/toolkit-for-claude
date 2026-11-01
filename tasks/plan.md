@@ -32,7 +32,7 @@ See [todo.md](todo.md) for acceptance criteria and verification.
 
 ### Phase 2: Digest
 - [x] Task 2: Digest skeleton, user messages end to end
-- [ ] Task 3: Corrections, denials, tool errors, skills
+- [x] Task 3: Corrections, denials, tool errors, skills
 - [ ] Task 4: Redaction, size cap, record and cleanup
 
 ### Checkpoint 2

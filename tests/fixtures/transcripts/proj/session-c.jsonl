@@ -1,0 +1,17 @@
+{"type":"user","timestamp":"2026-10-28T08:00:00.000Z","sessionId":"c","message":{"role":"user","content":"no worries, start with the video"}}
+{"type":"assistant","timestamp":"2026-10-28T08:00:02.000Z","sessionId":"c","message":{"role":"assistant","content":[{"type":"tool_use","id":"t1","name":"Bash","input":{"command":"ffprobe in.mp4"}}]}}
+{"type":"user","timestamp":"2026-10-28T08:00:03.000Z","sessionId":"c","message":{"role":"user","content":[{"type":"tool_result","tool_use_id":"t1","is_error":true,"content":"Exit code 127\n/usr/bin/bash: line 1: ffprobe: command not found"}]}}
+{"type":"assistant","timestamp":"2026-10-28T08:00:04.000Z","sessionId":"c","message":{"role":"assistant","content":[{"type":"tool_use","id":"t2","name":"Bash","input":{"command":"ffprobe -v in.mp4"}}]}}
+{"type":"user","timestamp":"2026-10-28T08:00:05.000Z","sessionId":"c","message":{"role":"user","content":[{"type":"tool_result","tool_use_id":"t2","is_error":true,"content":[{"type":"text","text":"Exit code 127\n/usr/bin/bash: line 1: ffprobe: command not found"}]}]}}
+{"type":"assistant","timestamp":"2026-10-28T08:00:06.000Z","sessionId":"c","message":{"role":"assistant","content":[{"type":"tool_use","id":"t3","name":"Bash","input":{"command":"git push --force"}}]}}
+{"type":"user","timestamp":"2026-10-28T08:00:07.000Z","sessionId":"c","message":{"role":"user","content":[{"type":"tool_result","tool_use_id":"t3","is_error":true,"content":"The user doesn't want to proceed with this tool use. The tool use was rejected. To tell you how to proceed, the user said:\nnever force push"}]}}
+{"type":"assistant","timestamp":"2026-10-28T08:00:08.000Z","sessionId":"c","message":{"role":"assistant","content":[{"type":"tool_use","id":"t4","name":"Read","input":{"file_path":"big.log"}}]}}
+{"type":"user","timestamp":"2026-10-28T08:00:09.000Z","sessionId":"c","message":{"role":"user","content":[{"type":"text","text":"[Request interrupted by user for tool use]"}]}}
+{"type":"user","timestamp":"2026-10-28T08:00:10.000Z","sessionId":"c","message":{"role":"user","content":"Attends, utilise le GPU"}}
+{"type":"assistant","timestamp":"2026-10-28T08:00:11.000Z","sessionId":"c","message":{"role":"assistant","content":[{"type":"tool_use","id":"t5","name":"Skill","input":{"skill":"agent-skills:review"}},{"type":"tool_use","id":"t6","name":"Skill","input":{"skill":"agent-skills:review"}}]}}
+{"type":"user","timestamp":"2026-10-28T08:00:12.000Z","sessionId":"c","message":{"role":"user","content":"<command-message>toolkit:save-state</command-message>\n<command-name>/toolkit:save-state</command-name>"}}
+{"type":"assistant","timestamp":"2026-10-28T08:00:13.000Z","sessionId":"c","message":{"role":"assistant","content":[{"type":"text","text":"Saved."}]}}
+{"type":"user","timestamp":"2026-10-28T08:00:14.000Z","sessionId":"c","message":{"role":"user","content":"Use pnpm instead of npm here"}}
+{"type":"assistant","timestamp":"2026-10-28T08:00:15.000Z","sessionId":"c","message":{"role":"assistant","content":[{"type":"tool_use","id":"t7","name":"Bash","input":{"command":"rm -rf dist"}}]}}
+{"type":"user","timestamp":"2026-10-28T08:00:16.000Z","sessionId":"c","message":{"role":"user","content":[{"type":"tool_result","tool_use_id":"t7","is_error":true,"content":"The user doesn't want to proceed with this tool use. The tool use was rejected."}]}}
+{"type":"user","timestamp":"2026-10-28T08:00:17.000Z","sessionId":"c","message":{"role":"user","content":[{"type":"text","text":"[Request interrupted by user for tool use]"}]}}

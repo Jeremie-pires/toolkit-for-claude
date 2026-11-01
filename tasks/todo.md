@@ -39,12 +39,12 @@
 **Description:** Add the four extractors and their digest sections.
 
 **Acceptance criteria:**
-- [ ] FR and EN correction markers and `[Request interrupted by user` are detected.
-- [ ] Denied tool calls and tool errors are listed; errors are grouped by tool and first line with counts.
-- [ ] Skills and slash commands are counted.
+- [x] FR and EN correction markers and `[Request interrupted by user` are detected.
+- [x] Denied tool calls and tool errors are listed; errors are grouped by tool and first line with counts.
+- [x] Skills and slash commands are counted.
 
 **Verification:**
-- [ ] `node --test` passes with one fixture case per extractor
+- [x] `node --test` passes with one fixture case per extractor
 
 **Dependencies:** Task 2
 **Files:** `plugins/toolkit/scripts/dream-digest.mjs`, `tests/dream-digest.test.mjs`, `tests/fixtures/transcripts/*.jsonl`

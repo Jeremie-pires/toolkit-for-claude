@@ -7,7 +7,7 @@ import path from 'node:path';
 import { test } from 'node:test';
 import { fileURLToPath } from 'node:url';
 import {
-  parseArgs, projectSlug, readTranscripts, extract, renderDigest, run, truncate, userText,
+  errorLine, extract, isCorrection, parseArgs, projectSlug, readTranscripts, renderDigest, run, truncate, userText,
 } from '../plugins/toolkit/scripts/dream-digest.mjs';
 
 const here = path.dirname(fileURLToPath(import.meta.url));
@@ -48,13 +48,55 @@ test('user text skips meta, compact summaries and injected command text', () => 
 
 test('window keeps recent records and orders sessions', () => {
   const { sessions } = readTranscripts(proj, since);
-  assert.equal(sessions.length, 2);
+  assert.equal(sessions.length, 3);
   const { userMessages } = extract(sessions);
   assert.deepEqual(userMessages.map((m) => [m.tag, m.text]), [
     ['s1', 'Add a login page'],
-    ['s1', 'non, utilise pnpm pas npm'],
     ['s2', 'Write the tests first'],
+    ['s3', 'no worries, start with the video'],
   ]);
+});
+
+test('correction markers in FR and EN', () => {
+  for (const text of ['non, pas comme ça', 'No.', 'stop', 'Attends', "don't do that", "c'est pas ça", 'wrong file', 'use pnpm instead']) {
+    assert.ok(isCorrection(text), text);
+  }
+  for (const text of ['nonetheless fine', 'Add a login page', 'notice this', 'stopwatch']) {
+    assert.ok(!isCorrection(text), text);
+  }
+});
+
+test('corrections only follow an assistant turn', () => {
+  const { corrections } = extract(readTranscripts(proj, since).sessions);
+  assert.deepEqual(corrections.map((m) => [m.tag, m.text]), [
+    ['s1', 'non, utilise pnpm pas npm'],
+    ['s3', 'Attends, utilise le GPU'],
+    ['s3', 'Use pnpm instead of npm here'],
+  ]);
+});
+
+test('denied tool calls and interruptions are listed', () => {
+  const { interruptions } = extract(readTranscripts(proj, since).sessions);
+  assert.deepEqual(interruptions.map((m) => m.text), [
+    'denied Bash: `git push --force` — "never force push"',
+    'interrupted during Read: `big.log`',
+    'denied Bash: `rm -rf dist`',
+  ]);
+});
+
+test('tool errors are grouped by tool and first meaningful line', () => {
+  const { toolErrors } = extract(readTranscripts(proj, since).sessions);
+  assert.deepEqual([...toolErrors], [['Bash: "/usr/bin/bash: line 1: ffprobe: command not found"', 2]]);
+  assert.equal(errorLine('Exit code 1\n\nboom'), 'boom');
+  assert.equal(errorLine('Exit code 1'), 'Exit code 1');
+});
+
+test('skills and slash commands are counted', () => {
+  const found = extract(readTranscripts(proj, since).sessions);
+  assert.deepEqual([...found.skills], [['agent-skills:review', 2]]);
+  assert.deepEqual([...found.commands].sort(), [['toolkit:load-state', 1], ['toolkit:save-state', 1]]);
+  assert.match(digestOf(), /- 2× Bash: "\/usr\/bin\/bash: line 1: ffprobe: command not found"/);
+  assert.match(digestOf(), /- Skills: agent-skills:review 2/);
 });
 
 test('unknown types and malformed lines are counted, not fatal', () => {
