@@ -33,7 +33,7 @@ See [todo.md](todo.md) for acceptance criteria and verification.
 ### Phase 2: Digest
 - [x] Task 2: Digest skeleton, user messages end to end
 - [x] Task 3: Corrections, denials, tool errors, skills
-- [ ] Task 4: Redaction, size cap, record and cleanup
+- [x] Task 4: Redaction, size cap, record and cleanup
 
 ### Checkpoint 2
 - [ ] `node --test` passes; real run on this repo under 30 KB and 10 s; user reads the digest

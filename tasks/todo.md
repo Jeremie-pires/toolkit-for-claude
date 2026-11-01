@@ -54,13 +54,13 @@
 **Description:** Redact secret formats, truncate items to 300 characters, cap the digest at 30 KB with the spec's trim order, and add `--record` and `--cleanup <file>`.
 
 **Acceptance criteria:**
-- [ ] Every secret format listed in the spec is redacted.
-- [ ] The digest never exceeds 30 KB; user messages are trimmed before corrections.
-- [ ] `--record` writes `{ "<project path>": { "lastDream": "<ISO>" } }` without losing other projects; `--cleanup` deletes only a file in the temp folder.
+- [x] Every secret format listed in the spec is redacted.
+- [x] The digest never exceeds 30 KB; user messages are trimmed before corrections.
+- [x] `--record` writes `{ "<project path>": { "lastDream": "<ISO>" } }` without losing other projects; `--cleanup` deletes only a file in the temp folder.
 
 **Verification:**
-- [ ] `node --test` passes
-- [ ] Real run on this repo: under 30 KB, under 10 s
+- [x] `node --test` passes$
+- [x] Real run on this repo: under 30 KB, under 10 s
 
 **Dependencies:** Task 3
 **Files:** `plugins/toolkit/scripts/dream-digest.mjs`, `tests/dream-digest.test.mjs`, `docs/specs/SPEC-dream-digest.md`
