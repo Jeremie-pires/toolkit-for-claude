@@ -14,6 +14,7 @@ Precedence: the project's `CLAUDE.md` overrides this file on any conflict. Proje
 2. Before a large or irreversible change (multi-file refactor, deletion, migration, release): present the plan and wait for approval.
 3. Stuck after 2 failed attempts: stop, report what was tried, ask. Do not pile up workarounds.
 4. Stay in scope. Report out-of-scope findings; do not fix them silently.
+5. Answer every review finding: fix it, or dismiss it with a one-line reason. Keep the reviewer's severity labels, and tag issues the change did not introduce as pre-existing (report them, per rule 4).
 
 ## Skills
 Use a skill only when it clearly applies. When several cover the same need, use the one in this table and do not chain the alternatives.
@@ -24,7 +25,7 @@ Use a skill only when it clearly applies. When several cover the same need, use 
 | Spec / plan / build | `agent-skills:spec`, `:plan`, `:build` | `caveman:lean-build` |
 | Bug, failing test | `agent-skills:debugging-and-error-recovery` | `caveman:investigate-first`, `caveman:surgical-patch` |
 | Tests, prove it works | `agent-skills:test` | `caveman:verify-and-stop` |
-| Code review | `agent-skills:review` | `caveman:caveman-review`; built-in `/code-review` only when asked (e.g. PR comments) |
+| Code review | Built-in `/code-review low` at each plan checkpoint and before a push; `agent-skills:review` for an in-depth review before a release | `caveman:caveman-review` |
 | Simplify / refactor | `agent-skills:code-simplify` | built-in `/simplify`, `caveman:safe-refactor` |
 | Migration, deprecation | `agent-skills:deprecation-and-migration` | `caveman:migration` |
 | Explore a codebase | built-in `Explore` agent | `caveman:caveman-explore`, `caveman:cavecrew-investigator` |
