@@ -2,21 +2,24 @@
 _Updated: 2026-11-07_
 
 ## Done
-- `/toolkit:dream` tasks 1 to 5 and 7 (plan in `tasks/`).
+- `/toolkit:dream` tasks 1 to 5 and 7 (plan in `tasks/`). Task 6 dry run: the status line segment and the closing steps work; the run found no recurring pattern, so accepting a proposal is not tested yet.
+- Hygiene batch: `save-state` checks the tracking-files rule; `bootstrap.ps1` warns about Bash rules with `:*` before their end (they never match) and about user skills named like a kit skill; `bootstrap.ps1`, the status line and the dream script all use `CLAUDE_CONFIG_DIR` when it is set.
 
 ## Current state
-Plugin `toolkit`: 5 commands, 3 skills, 1 script (`dream-digest.mjs`: redacted digest, `--record`, `--cleanup`). Tests: `node --test` and `tests/review-guard.tests.ps1`.
+Plugin `toolkit`: 5 commands, 3 skills, 1 script (`dream-digest.mjs`: redacted digest, `--record`, `--cleanup`). Tests: `node --test`, `tests/review-guard.tests.ps1` and `tests/bootstrap-checks.tests.ps1`.
 
 ## Next steps
-1. Task 6: after `bootstrap.ps1 -Apply` and a restart, check `dream?` in the status line, dry run `/toolkit:dream`, reject all once, accept one; tick Checkpoints 3 and 4.
-2. Decide whether `bootstrap.ps1` creates the `~/.claude/rules/` folder and reports legacy `:*` permission rules left from older setups.
-3. Installs made before the repo rename: on "Marketplace 'workshop' not found", re-add the marketplace with `claude plugin marketplace add`, then re-run `bootstrap.ps1 -Apply`.
+1. Task 6: once real sessions show a recurring pattern, run `/toolkit:dream` and accept one proposal; then tick Checkpoints 3 and 4.
+2. Fix the upstream check in `bootstrap.ps1`: compare `HEAD...@{u}` instead of `HEAD '@{u}'`.
+3. Later: digest ignores "no match" exits; `bootstrap.ps1` creates or reports `~/.claude/rules/`; CI; a Node bootstrap for every OS.
+4. Pre-rename installs: on "Marketplace 'workshop' not found", run `claude plugin marketplace add` again, then `bootstrap.ps1 -Apply`.
 
 ## Open issues
 - Bash deny rules match prefixes only; documented.
 - The transcript format is undocumented.
-- The status line ignores `CLAUDE_CONFIG_DIR`.
-- The digest counts any non-zero Bash exit as a tool error.
+- The digest counts any non-zero Bash exit as a tool error, and counted the `--record` output as an error of an unknown tool.
+- The upstream check uses a two-way diff, so local unpushed commits in the kit clone show up as upstream changes waiting for review.
+- `bootstrap.ps1` creates the config folder even in preview mode.
 
 ## Decisions
 - 2026-10-27 Plugin name `toolkit` — `claude-` prefix is reserved for Anthropic; keeps the "kit/toolbox" idea.
@@ -34,3 +37,5 @@ Plugin `toolkit`: 5 commands, 3 skills, 1 script (`dream-digest.mjs`: redacted d
 - 2026-11-01 Dream never applies global rules — patterns valid for every project are flagged and go through `/toolkit:add-rule`.
 - 2026-11-01 Reminder in the status line, not a hook — free, visible, and never injects text into the session.
 - 2026-11-01 Tests at the repo root with `node:test` and synthetic fixtures — nothing test-related ships in the plugin, and no real transcript is committed.
+- 2026-11-07 The `:*` check flags only a mid-pattern `:*` — the docs say a trailing `:*` equals a trailing ` *`, so it is not legacy.
+- 2026-11-07 With `CLAUDE_CONFIG_DIR` set, bootstrap rewrites the kit's `~/.claude/` paths to that folder — permission rules use the absolute `//<posix path>` form from the docs.

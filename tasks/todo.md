@@ -89,12 +89,12 @@
 **Description:** Run `/toolkit:dream` here after a manual `bootstrap.ps1 -Apply`, reject everything once, then accept one proposal. Document the command in the README.
 
 **Acceptance criteria:**
-- [ ] Rejecting all writes only `claude-kit-dream.json`; the digest file is gone.
+- [x] Rejecting all writes only `claude-kit-dream.json`; the digest file is gone.
 - [ ] An accepted proposal is applied as shown.
 - [x] README lists `/toolkit:dream`, its cost model and the 30-day transcript limit.
 
 **Verification:**
-- [ ] Manual run, `git status` shows only the expected changes
+- [x] Manual run, `git status` shows only the expected changes
 
 **Dependencies:** Task 5
 **Files:** `README.md`
