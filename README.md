@@ -110,7 +110,7 @@ It never touches `.credentials.json`, `history.jsonl`, `projects/`, `~/.claude/r
 
 On every launch, an async `SessionStart` hook runs `bootstrap.ps1 -Apply -Quiet` in the background. The fetch and fast-forward run at most once every 24 hours, and the settings merge runs every time. If the new commits change a file that runs code (`bootstrap.ps1`, `global/settings.base.json`, `global/statusline.js`, `plugins/*/hooks/`, any script under `plugins/`), auto-sync does not take them: it raises a `kit!` warning until you read the diff (`git -C ~/.claude-kit log -p HEAD..@{u}`) and run `bootstrap.ps1 -Apply` by hand. When a pull brings new commits, the `toolkit` plugin is refreshed (`claude plugin marketplace update workshop`, then `claude plugin update`). If you are offline or have local changes, the pull is skipped and the local copy is used. Changes take effect at the next session start.
 
-Warnings (pull failed, local edit kept, credentials in settings, invalid JSON) go to `~/.claude/claude-kit-sync.json`, and the status line shows `kit! (n)` while there are any.
+Warnings (pull failed, local edit kept, credentials in settings, invalid JSON, a Bash rule with `:*` before its end, a user skill named like a kit skill) go to `~/.claude/claude-kit-sync.json`, and the status line shows `kit! (n)` while there are any.
 
 If `-Apply` reports that a plugin install failed, run the install by hand inside Claude Code (`/plugin install toolkit@workshop`, and the same for the others), then restart.
 
