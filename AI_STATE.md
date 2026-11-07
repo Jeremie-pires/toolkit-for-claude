@@ -3,22 +3,20 @@ _Updated: 2026-11-07_
 
 ## Done
 - `/toolkit:dream` tasks 1 to 5 and 7 (plan in `tasks/`). Task 6 dry run: the status line segment and the closing steps work; the run found no recurring pattern, so accepting a proposal is not tested yet.
-- Hygiene batch: `save-state` checks the tracking-files rule; `bootstrap.ps1` warns about Bash rules with `:*` before their end (they never match) and about user skills named like a kit skill; `bootstrap.ps1`, the status line and the dream script all use `CLAUDE_CONFIG_DIR` when it is set.
+- Hygiene batch: `save-state` checks the tracking-files rule; `bootstrap.ps1` warns about Bash rules with `:*` before their end (they never match) and about user skills named like a kit skill; the upstream check compares against the common commit, so local commits in the kit clone are no longer held for review; `bootstrap.ps1`, the status line and the dream script all use `CLAUDE_CONFIG_DIR` when it is set.
 
 ## Current state
 Plugin `toolkit`: 5 commands, 3 skills, 1 script (`dream-digest.mjs`: redacted digest, `--record`, `--cleanup`). Tests: `node --test`, `tests/review-guard.tests.ps1` and `tests/bootstrap-checks.tests.ps1`.
 
 ## Next steps
 1. Task 6: once real sessions show a recurring pattern, run `/toolkit:dream` and accept one proposal; then tick Checkpoints 3 and 4.
-2. Fix the upstream check in `bootstrap.ps1`: compare `HEAD...@{u}` instead of `HEAD '@{u}'`.
-3. Later: digest ignores "no match" exits; `bootstrap.ps1` creates or reports `~/.claude/rules/`; CI; a Node bootstrap for every OS.
-4. Pre-rename installs: on "Marketplace 'workshop' not found", run `claude plugin marketplace add` again, then `bootstrap.ps1 -Apply`.
+2. Later: digest ignores "no match" exits; `bootstrap.ps1` creates or reports `~/.claude/rules/`; CI; a Node bootstrap for every OS.
+3. Pre-rename installs: on "Marketplace 'workshop' not found", run `claude plugin marketplace add` again, then `bootstrap.ps1 -Apply`.
 
 ## Open issues
 - Bash deny rules match prefixes only; documented.
 - The transcript format is undocumented.
 - The digest counts any non-zero Bash exit as a tool error, and counted the `--record` output as an error of an unknown tool.
-- The upstream check uses a two-way diff, so local unpushed commits in the kit clone show up as upstream changes waiting for review.
 - `bootstrap.ps1` creates the config folder even in preview mode.
 
 ## Decisions

@@ -5,7 +5,7 @@ $ErrorActionPreference = 'Stop'
 # Load only the functions under test, so the script itself never runs
 $bootstrap = Join-Path $PSScriptRoot '..\bootstrap.ps1'
 $ast = [System.Management.Automation.Language.Parser]::ParseFile($bootstrap, [ref]$null, [ref]$null)
-foreach ($name in 'HasProp', 'Find-MidWildcardRules', 'Find-ShadowedSkills', 'Set-ConfigDirPaths') {
+foreach ($name in 'HasProp', 'Find-MidWildcardRules', 'Find-ShadowedSkills', 'Set-ConfigDirPaths', 'Get-HeldChanges') {
   $fn = $ast.Find({ param($n) $n -is [System.Management.Automation.Language.FunctionDefinitionAst] -and $n.Name -eq $name }, $true)
   if (-not $fn) { throw "$name not found in bootstrap.ps1" }
   Invoke-Expression $fn.Extent.Text
@@ -52,6 +52,31 @@ try {
 
   Check 'user skill named like a kit skill is flagged' (Find-ShadowedSkills $userSkills $kit) @('humanizer')
   Check 'missing user skills folder' (Find-ShadowedSkills (Join-Path $root 'none') $kit) @()
+
+  # A clone with an upstream: only files changed upstream since the common commit are held.
+  # Windows PowerShell turns git's stderr into errors under 'Stop'; bootstrap.ps1 runs with 'Continue' too.
+  $ErrorActionPreference = 'Continue'
+  $origin = Join-Path $root 'origin.git'
+  $clone = Join-Path $root 'clone'
+  $other = Join-Path $root 'other'
+  function Commit($repo, $file) {
+    Set-Content (Join-Path $repo $file) (Get-Random)
+    $null = & git -C $repo add $file 2>&1
+    $null = & git -C $repo -c user.name=t -c user.email=t@t commit -q -m $file 2>&1
+  }
+  $null = & git init -q --bare $origin 2>&1
+  $null = & git clone -q $origin $clone 2>&1
+  Commit $clone 'README.md'
+  $null = & git -C $clone push -q origin HEAD 2>&1
+  $null = & git clone -q $origin $other 2>&1
+
+  Commit $clone 'bootstrap.ps1'
+  Check 'local unpushed change is not held' (Get-HeldChanges $clone '^bootstrap\.ps1$') @()
+
+  Commit $other 'bootstrap.ps1'
+  $null = & git -C $other push -q origin HEAD 2>&1
+  $null = & git -C $clone fetch -q 2>&1
+  Check 'upstream change is held, even when local commits exist' (Get-HeldChanges $clone '^bootstrap\.ps1$') @('bootstrap.ps1')
 } finally {
   Remove-Item $root -Recurse -Force -ErrorAction SilentlyContinue
 }

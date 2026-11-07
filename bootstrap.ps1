@@ -89,6 +89,10 @@ function Set-ConfigDirPaths($base, $configDir) {
     }
   }
 }
+# Files matching $pattern changed upstream; a two-way diff would also list local commits
+function Get-HeldChanges($kitDir, $pattern) {
+  @(& git -C $kitDir diff --name-only 'HEAD...@{u}' 2>$null | Where-Object { $_ -match $pattern })
+}
 function FileHash($p) { if (Test-Path $p) { return (Get-FileHash $p).Hash } return '' }
 function Backup($p) {
   if (-not (Test-Path $p)) { return }
@@ -145,7 +149,7 @@ if (Test-Path (Join-Path $KitDir '.git')) {
     $null = & git -C $KitDir -c http.lowSpeedLimit=1000 -c http.lowSpeedTime=15 fetch --quiet 2>&1
     $held = @()
     if ($LASTEXITCODE -eq 0) {
-      $held = @(& git -C $KitDir diff --name-only HEAD '@{u}' 2>$null | Where-Object { $_ -match $reviewPattern })
+      $held = Get-HeldChanges $KitDir $reviewPattern
     }
     if ($LASTEXITCODE -ne 0) {
       Warn 'git fetch skipped (offline, auth, or no upstream branch); using the local copy'
