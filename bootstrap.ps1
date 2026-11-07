@@ -56,6 +56,20 @@ function ToJson($o) {
   $j = $o | ConvertTo-Json -Depth 20
   return ($j -replace '\\u0027', "'" -replace '\\u003c', '<' -replace '\\u003e', '>' -replace '\\u0026', '&')
 }
+# Claude Code reads ':*' as a wildcard only at the end of a Bash rule; elsewhere it is a literal colon and the rule never matches
+function Find-MidWildcardRules($permissions) {
+  foreach ($list in 'allow', 'ask', 'deny') {
+    if (HasProp $permissions $list) { @($permissions.$list) | Where-Object { $_ -match '^Bash\(.*:\*(?!\)$)' } }
+  }
+}
+# User skills named like a kit plugin skill: both show up in the skill list
+function Find-ShadowedSkills($userSkillsDir, $kitDir) {
+  if (-not (Test-Path $userSkillsDir)) { return }
+  $kitSkills = @(Get-ChildItem (Join-Path $kitDir 'plugins\*\skills\*') -Directory -ErrorAction SilentlyContinue | ForEach-Object Name)
+  Get-ChildItem $userSkillsDir -Directory |
+    Where-Object { ($kitSkills -contains $_.Name) -and (Test-Path (Join-Path $_.FullName 'SKILL.md')) } |
+    ForEach-Object Name
+}
 function FileHash($p) { if (Test-Path $p) { return (Get-FileHash $p).Hash } return '' }
 function Backup($p) {
   if (-not (Test-Path $p)) { return }
@@ -240,11 +254,23 @@ if ($null -eq $base) {
       Warn "settings.json env holds credentials ($($secretKeys -join ', ')); move them to user environment variables (see README, Security notes)"
     }
   }
+
+  if (HasProp $cur 'permissions') {
+    $deadRules = @(Find-MidWildcardRules $cur.permissions)
+    if ($deadRules.Count) {
+      Warn "permission rules never match, ':*' works only at the end ($($deadRules -join ', ')); use a space-separated '*' instead"
+    }
+  }
 }
 
 # 3. Global rules and status line script
 Sync-File (Join-Path $KitDir 'global\CLAUDE.md') (Join-Path $claude 'CLAUDE.md') 'CLAUDE.md'
 Sync-File (Join-Path $KitDir 'global\statusline.js') (Join-Path $claude 'statusline.js') 'statusline.js'
+
+$shadowed = @(Find-ShadowedSkills (Join-Path $claude 'skills') $KitDir)
+if ($shadowed.Count) {
+  Warn "user skills in $claude\skills share a name with kit plugin skills ($($shadowed -join ', ')); remove the local copy if the kit's version replaces it"
+}
 
 # 4. Plugins: install the missing ones; after a pull with new commits, refresh the kit plugin
 $installedPath = Join-Path $claude 'plugins\installed_plugins.json'
