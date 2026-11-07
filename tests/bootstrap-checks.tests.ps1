@@ -5,7 +5,7 @@ $ErrorActionPreference = 'Stop'
 # Load only the functions under test, so the script itself never runs
 $bootstrap = Join-Path $PSScriptRoot '..\bootstrap.ps1'
 $ast = [System.Management.Automation.Language.Parser]::ParseFile($bootstrap, [ref]$null, [ref]$null)
-foreach ($name in 'HasProp', 'Find-MidWildcardRules', 'Find-ShadowedSkills') {
+foreach ($name in 'HasProp', 'Find-MidWildcardRules', 'Find-ShadowedSkills', 'Set-ConfigDirPaths') {
   $fn = $ast.Find({ param($n) $n -is [System.Management.Automation.Language.FunctionDefinitionAst] -and $n.Name -eq $name }, $true)
   if (-not $fn) { throw "$name not found in bootstrap.ps1" }
   Invoke-Expression $fn.Extent.Text
@@ -26,6 +26,20 @@ $permissions = [pscustomobject]@{
 }
 Check 'mid-pattern :* is flagged, trailing :* and non-Bash rules are not' (Find-MidWildcardRules $permissions) @('Bash(git:* push)', 'Bash(rm:* -rf)')
 Check 'no permission lists' (Find-MidWildcardRules ([pscustomobject]@{})) @()
+
+function NewBase {
+  [pscustomobject]@{
+    statusLine  = [pscustomobject]@{ type = 'command'; command = 'node "$HOME/.claude/statusline.js"' }
+    permissions = [pscustomobject]@{ deny = @('Read(~/.claude/settings.json.bak-*)', 'Read(.env)') }
+  }
+}
+$base = NewBase
+Set-ConfigDirPaths $base 'D:\Claude\work\'
+Check 'Windows config dir: status line command' $base.statusLine.command 'node "D:/Claude/work/statusline.js"'
+Check 'Windows config dir: absolute rule, other rules kept' $base.permissions.deny @('Read(//d/Claude/work/settings.json.bak-*)', 'Read(.env)')
+$base = NewBase
+Set-ConfigDirPaths $base '/home/u/.claude-work'
+Check 'POSIX config dir: absolute rule' $base.permissions.deny[0] 'Read(//home/u/.claude-work/settings.json.bak-*)'
 
 $root = Join-Path ([IO.Path]::GetTempPath()) "bootstrap-checks-$PID"
 try {

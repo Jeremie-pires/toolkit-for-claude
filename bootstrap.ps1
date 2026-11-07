@@ -17,6 +17,7 @@
   What it touches: ~/.claude/settings.json (merged, backed up), ~/.claude/CLAUDE.md,
   ~/.claude/statusline.js, ~/.claude/claude-kit-sync.json. The first backup of each file is
   also kept for good as <file>.pre-kit. It never touches credentials, history or projects.
+  When CLAUDE_CONFIG_DIR is set, that folder replaces ~/.claude everywhere above.
 #>
 [CmdletBinding()]
 param(
@@ -29,7 +30,8 @@ param(
 )
 
 $ErrorActionPreference = 'Continue'
-$claude = Join-Path $HOME '.claude'
+# Claude Code keeps its config in CLAUDE_CONFIG_DIR when set; the SessionStart hook inherits it
+$claude = if ($env:CLAUDE_CONFIG_DIR) { $env:CLAUDE_CONFIG_DIR } else { Join-Path $HOME '.claude' }
 $utf8 = New-Object System.Text.UTF8Encoding($false)
 $stamp = Get-Date -Format 'yyyyMMdd-HHmmss'
 $statePath = Join-Path $claude 'claude-kit-sync.json'
@@ -69,6 +71,23 @@ function Find-ShadowedSkills($userSkillsDir, $kitDir) {
   Get-ChildItem $userSkillsDir -Directory |
     Where-Object { ($kitSkills -contains $_.Name) -and (Test-Path (Join-Path $_.FullName 'SKILL.md')) } |
     ForEach-Object Name
+}
+# settings.base.json points at ~/.claude; a custom config folder needs its own paths.
+# Permission rules take an absolute path as //<posix path> (Windows C:\x becomes /c/x).
+function Set-ConfigDirPaths($base, $configDir) {
+  $fwd = $configDir.TrimEnd('\', '/') -replace '\\', '/'
+  $posix = $fwd
+  if ($fwd -match '^([A-Za-z]):(.*)$') { $posix = '/' + $Matches[1].ToLower() + $Matches[2] }
+  if ((HasProp $base 'statusLine') -and (HasProp $base.statusLine 'command')) {
+    $base.statusLine.command = $base.statusLine.command.Replace('$HOME/.claude/', "$fwd/")
+  }
+  if (HasProp $base 'permissions') {
+    foreach ($list in 'allow', 'ask', 'deny') {
+      if (HasProp $base.permissions $list) {
+        $base.permissions.$list = @($base.permissions.$list | ForEach-Object { $_.Replace('(~/.claude/', "(/$posix/") })
+      }
+    }
+  }
 }
 function FileHash($p) { if (Test-Path $p) { return (Get-FileHash $p).Hash } return '' }
 function Backup($p) {
@@ -156,6 +175,7 @@ $basePath = Join-Path $KitDir 'global\settings.base.json'
 $curPath = Join-Path $claude 'settings.json'
 $base = ReadJson $basePath
 $cur = ReadJson $curPath
+if ($null -ne $base -and $env:CLAUDE_CONFIG_DIR) { Set-ConfigDirPaths $base $claude }
 
 # The kit's marketplace points at wherever this clone came from, so a fork needs no edits
 $origin = (& git -C $KitDir remote get-url origin 2>$null)
