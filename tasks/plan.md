@@ -49,7 +49,7 @@ See [todo.md](todo.md) for acceptance criteria and verification.
 - [x] Task 7: Status line segment
 
 ### Checkpoint 4 (complete)
-- [ ] All spec success criteria met; push; `-Apply` on this machine; `/toolkit:save-state`
+- [ ] All spec success criteria met; push; `-Apply` on a test install; `/toolkit:save-state`
 
 ## Risks and mitigations
 | Risk | Impact | Mitigation |

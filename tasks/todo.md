@@ -120,4 +120,4 @@
 
 ## Checkpoint 4 (complete)
 - [ ] All spec success criteria met
-- [ ] Push; `bootstrap.ps1 -Apply` on this machine; `/toolkit:save-state`
+- [ ] Push; `bootstrap.ps1 -Apply` on a test install; `/toolkit:save-state`

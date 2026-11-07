@@ -1,23 +1,22 @@
 # Project state
-_Updated: 2026-11-01_
+_Updated: 2026-11-07_
 
 ## Done
-- Review rules in `global/CLAUDE.md`; repo renamed to `toolkit-for-claude`.
-- Auto-sync holds back every executable file under `plugins/`.
-- `/toolkit:dream` built and pushed (specs in `docs/specs/`, plan in `tasks/`): tasks 1 to 5 and 7.
+- `/toolkit:dream` tasks 1 to 5 and 7 (plan in `tasks/`).
 
 ## Current state
-Plugin `toolkit`: 5 commands, 3 skills, 1 script. `dream-digest.mjs` writes a redacted digest of at most 30 KB to the temp folder and owns `--record` and `--cleanup`. `dream.md` proposes up to 10 changes, one approval each. The status line shows the days since the last dream. Tests: `node --test` and `tests/review-guard.tests.ps1`.
+Plugin `toolkit`: 5 commands, 3 skills, 1 script (`dream-digest.mjs`: redacted digest, `--record`, `--cleanup`). Tests: `node --test` and `tests/review-guard.tests.ps1`.
 
 ## Next steps
-1. Run `bootstrap.ps1 -Apply`, restart Claude Code, check `dream?` and `/toolkit:dream`.
-2. Task 6: dry run `/toolkit:dream`, reject all once, then accept one; tick Task 6 and Checkpoints 3 and 4.
-3. On the other machines, run `bootstrap.ps1 -Apply`. If it reports "Marketplace 'workshop' not found" (the local registration still points at the old repo name), re-add the marketplace from the renamed repo with `claude plugin marketplace add`, then re-run.
+1. Task 6: after `bootstrap.ps1 -Apply` and a restart, check `dream?` in the status line, dry run `/toolkit:dream`, reject all once, accept one; tick Checkpoints 3 and 4.
+2. Decide whether `bootstrap.ps1` creates the `~/.claude/rules/` folder and reports legacy `:*` permission rules left from older setups.
+3. Installs made before the repo rename: on "Marketplace 'workshop' not found", re-add the marketplace with `claude plugin marketplace add`, then re-run `bootstrap.ps1 -Apply`.
 
 ## Open issues
 - Bash deny rules match prefixes only; documented.
-- The transcript format is undocumented; the digest header lists unknown record types.
-- The status line ignores `CLAUDE_CONFIG_DIR`, which the script honors.
+- The transcript format is undocumented.
+- The status line ignores `CLAUDE_CONFIG_DIR`.
+- The digest counts any non-zero Bash exit as a tool error.
 
 ## Decisions
 - 2026-10-27 Plugin name `toolkit` — `claude-` prefix is reserved for Anthropic; keeps the "kit/toolbox" idea.

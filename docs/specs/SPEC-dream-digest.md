@@ -77,6 +77,6 @@ Unit tests on synthetic fixtures: slug derivation, window filter, each extractor
 - Never: send data over the network; write into a repository; keep real transcript content in fixtures.
 
 ## Success criteria
-- On this machine's transcripts for this repo, the digest is under 30 KB and the run takes under 10 s.
+- On a month of real transcripts for this repo, the digest is under 30 KB and the run takes under 10 s.
 - Every listed secret format is redacted in tests.
 - A fixture with unknown record types and broken lines produces a digest and a skipped count, not a crash.
