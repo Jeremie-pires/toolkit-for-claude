@@ -59,6 +59,7 @@ The plugin contains only Markdown commands and skills. It runs no code on your m
 toolkit-for-claude/
 ├─ .claude-plugin/marketplace.json   the "workshop" marketplace
 ├─ plugins/toolkit/                  the "toolkit" plugin
+│  ├─ agents/researcher.md           web research subagent (Haiku, read-only web tools)
 │  ├─ commands/                      /toolkit:add-rule, :dream, :load-state, :save-state, :setup-memory
 │  ├─ scripts/dream-digest.mjs       local transcript digest for /toolkit:dream (Node)
 │  └─ skills/                        references, humanizer, find-skills
@@ -90,7 +91,7 @@ The kit also enables two third-party plugins: [`agent-skills`](https://github.co
 - **Settings**: edit `global/settings.base.json`. Keep it free of absolute paths and project-specific blocks. `theme`, `model` and `autoUpdatesChannel` are the author's defaults: they are only set when your `settings.json` has no value, so change or remove them freely.
 - **Commands and skills**: add a file to `plugins/toolkit/commands/` (with a `description` frontmatter) or `plugins/toolkit/skills/<name>/SKILL.md`, run `claude plugin validate .`, commit and push. `plugin.json` has no `version` on purpose: the plugin follows your commits, so you don't need to bump anything.
 
-Your other machines pick up a change at their next daily pull, or right away with `bootstrap.ps1 -Apply -Force`. A change to `bootstrap.ps1`, `global/settings.base.json`, `global/statusline.js`, a plugin's `hooks/` folder or any script in a plugin (`.ps1`, `.js`, `.mjs`, `.py`, `.sh`…) waits for a manual `bootstrap.ps1 -Apply` (see [Security](#security)). Do your edits in the clone at `~/.claude-kit` so there is a single working copy.
+Your other machines pick up a change at their next daily pull, or right away with `bootstrap.ps1 -Apply -Force`. A change to `bootstrap.ps1`, `global/settings.base.json`, `global/statusline.js`, a plugin's `hooks/` or `agents/` folder, or any script in a plugin (`.ps1`, `.js`, `.mjs`, `.py`, `.sh`…) waits for a manual `bootstrap.ps1 -Apply` (see [Security](#security)). Do your edits in the clone at `~/.claude-kit` so there is a single working copy.
 
 To take improvements from this repo, use **Sync fork** on GitHub and read the diff before you merge. Your machines only receive it after that.
 
@@ -110,7 +111,7 @@ It never touches `.credentials.json`, `history.jsonl`, `projects/`, `~/.claude/r
 
 If `CLAUDE_CONFIG_DIR` is set, the kit uses that folder instead of `~/.claude`: bootstrap writes there, the status line and `/toolkit:dream` read from there, and the status line command and the kit's `~/.claude/` permission rules are rewritten to point at it. Set the variable before you run bootstrap by hand. The `SessionStart` hook inherits it from Claude Code.
 
-On every launch, an async `SessionStart` hook runs `bootstrap.ps1 -Apply -Quiet` in the background. The fetch and fast-forward run at most once every 24 hours, and the settings merge runs every time. If the new commits change a file that runs code (`bootstrap.ps1`, `global/settings.base.json`, `global/statusline.js`, `plugins/*/hooks/`, any script under `plugins/`), auto-sync does not take them: it raises a `kit!` warning until you read the diff (`git -C ~/.claude-kit log -p HEAD..@{u}`) and run `bootstrap.ps1 -Apply` by hand. When a pull brings new commits, the `toolkit` plugin is refreshed (`claude plugin marketplace update workshop`, then `claude plugin update`). If you are offline or have local changes, the pull is skipped and the local copy is used. Changes take effect at the next session start.
+On every launch, an async `SessionStart` hook runs `bootstrap.ps1 -Apply -Quiet` in the background. The fetch and fast-forward run at most once every 24 hours, and the settings merge runs every time. If the new commits change a file that runs code (`bootstrap.ps1`, `global/settings.base.json`, `global/statusline.js`, `plugins/*/hooks/`, `plugins/*/agents/`, any script under `plugins/`), auto-sync does not take them: it raises a `kit!` warning until you read the diff (`git -C ~/.claude-kit log -p HEAD..@{u}`) and run `bootstrap.ps1 -Apply` by hand. When a pull brings new commits, the `toolkit` plugin is refreshed (`claude plugin marketplace update workshop`, then `claude plugin update`). If you are offline or have local changes, the pull is skipped and the local copy is used. Changes take effect at the next session start.
 
 Warnings (pull failed, local edit kept, credentials in settings, invalid JSON, a Bash rule with `:*` before its end, a user skill named like a kit skill) go to `~/.claude/claude-kit-sync.json`, and the status line shows `kit! (n)` while there are any.
 

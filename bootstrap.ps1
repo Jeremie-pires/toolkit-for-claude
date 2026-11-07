@@ -10,7 +10,7 @@
     & $HOME\.claude-kit\bootstrap.ps1 -Apply     # apply
   After that, an async SessionStart hook runs it with -Apply -Quiet. In that mode the
   git pull runs at most once every 24 hours, upstream changes to files that run code
-  (bootstrap.ps1, settings.base.json, statusline.js, plugin hooks and scripts) are held back until a
+  (bootstrap.ps1, settings.base.json, statusline.js, plugin hooks, agents and scripts) are held back until a
   manual -Apply, and warnings go to ~/.claude/claude-kit-sync.json (the status line shows
   them as "kit!").
 
@@ -38,7 +38,7 @@ $statePath = Join-Path $claude 'claude-kit-sync.json'
 $pullEvery = [TimeSpan]::FromHours(24)
 $keepBackups = 5
 # Upstream changes to these paths run code on this machine, so auto-sync never takes them unreviewed
-$reviewPattern = '^(bootstrap\.ps1|global/settings\.base\.json|global/statusline\.js)$|^plugins/[^/]+/hooks/|^plugins/.+\.(ps1|psm1|js|mjs|cjs|ts|py|sh|bat|cmd)$'
+$reviewPattern = '^(bootstrap\.ps1|global/settings\.base\.json|global/statusline\.js)$|^plugins/[^/]+/(hooks|agents)/|^plugins/.+\.(ps1|psm1|js|mjs|cjs|ts|py|sh|bat|cmd)$'
 $warnings = New-Object System.Collections.Generic.List[string]
 
 function Say($m) { if (-not $Quiet) { Write-Host $m } }

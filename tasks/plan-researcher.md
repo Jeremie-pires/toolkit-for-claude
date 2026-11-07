@@ -27,7 +27,7 @@ Checkpoint 2
 See [todo-researcher.md](todo-researcher.md) for acceptance criteria and verification.
 
 ### Phase 1: Agent and default model
-- [ ] Task 1: `researcher` agent, held for review
+- [x] Task 1: `researcher` agent, held for review
 - [ ] Task 2: `opusplan` as the kit default
 
 ### Checkpoint 1

@@ -1,6 +1,6 @@
 {
   "name": "toolkit",
-  "description": "State commands (load/save-state, setup-memory), /add-rule, /dream session review, writing and skill-discovery skills, default web references",
+  "description": "State commands (load/save-state, setup-memory), /add-rule, /dream session review, a web research agent, writing and skill-discovery skills, default web references",
   "author": { "name": "Jeremie-pires" },
   "homepage": "https://github.com/Jeremie-pires/toolkit-for-claude",
   "repository": "https://github.com/Jeremie-pires/toolkit-for-claude",

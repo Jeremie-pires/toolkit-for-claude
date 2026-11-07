@@ -16,6 +16,7 @@ $cases = [ordered]@{
   'plugins/toolkit/scripts/dream-digest.mjs'   = $true
   'plugins/toolkit/skills/x/run.py'            = $true
   'plugins/toolkit/scripts/sync.sh'            = $true
+  'plugins/toolkit/agents/researcher.md'       = $true
   'plugins/toolkit/commands/dream.md'          = $false
   'plugins/toolkit/skills/humanizer/SKILL.md'  = $false
   'plugins/toolkit/.claude-plugin/plugin.json' = $false

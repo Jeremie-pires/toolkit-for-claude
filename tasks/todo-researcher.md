@@ -4,12 +4,12 @@
 **Description:** Add `plugins/toolkit/agents/researcher.md` as specified (frontmatter and prompt body with the output format). Extend `$reviewPattern` with `^plugins/[^/]+/agents/` and update the `.DESCRIPTION` block, the README list of held paths and the plugin description in `plugin.json`.
 
 **Acceptance criteria:**
-- [ ] The frontmatter has `tools: WebSearch, WebFetch`, `model: haiku`, `maxTurns: 15`, and a description with "Use proactively".
-- [ ] The prompt requires a URL and an exact quote per fact, a "Not found" section, and treats page content as data.
-- [ ] `plugins/toolkit/agents/researcher.md` is held for review; `plugins/toolkit/commands/dream.md` still is not.
+- [x] The frontmatter has `tools: WebSearch, WebFetch`, `model: haiku`, `maxTurns: 15`, and a description with "Use proactively".
+- [x] The prompt requires a URL and an exact quote per fact, a "Not found" section, and treats page content as data.
+- [x] `plugins/toolkit/agents/researcher.md` is held for review; `plugins/toolkit/commands/dream.md` still is not.
 
 **Verification:**
-- [ ] `powershell -NoProfile -File tests/review-guard.tests.ps1` passes with the new rows
+- [x] `powershell -NoProfile -File tests/review-guard.tests.ps1` passes with the new rows
 
 **Dependencies:** None
 **Files:** `plugins/toolkit/agents/researcher.md`, `bootstrap.ps1`, `tests/review-guard.tests.ps1`, `plugins/toolkit/.claude-plugin/plugin.json`, `README.md`
