@@ -71,9 +71,14 @@ function gitBranch(dir) {
   }
 }
 
+// Claude Code reads its config from CLAUDE_CONFIG_DIR when set, else ~/.claude
+function claudeDir() {
+  return process.env.CLAUDE_CONFIG_DIR || path.join(os.homedir(), '.claude');
+}
+
 function cavemanMode() {
   try {
-    return fs.readFileSync(path.join(os.homedir(), '.claude', '.caveman-active'), 'utf8').trim();
+    return fs.readFileSync(path.join(claudeDir(), '.caveman-active'), 'utf8').trim();
   } catch {
     return '';
   }
@@ -82,7 +87,7 @@ function cavemanMode() {
 // bootstrap.ps1 records sync warnings here; surface them so a skipped update is not silent
 function kitWarnings() {
   try {
-    const state = JSON.parse(fs.readFileSync(path.join(os.homedir(), '.claude', 'claude-kit-sync.json'), 'utf8'));
+    const state = JSON.parse(fs.readFileSync(path.join(claudeDir(), 'claude-kit-sync.json'), 'utf8'));
     return Array.isArray(state.warnings) ? state.warnings.length : 0;
   } catch {
     return 0;
@@ -92,7 +97,7 @@ function kitWarnings() {
 // Days since /toolkit:dream last ran for this project (claude-kit-dream.json), or null if never
 function dreamAge(projectDir) {
   try {
-    const records = JSON.parse(fs.readFileSync(path.join(os.homedir(), '.claude', 'claude-kit-dream.json'), 'utf8'));
+    const records = JSON.parse(fs.readFileSync(path.join(claudeDir(), 'claude-kit-dream.json'), 'utf8'));
     const norm = (p) => (process.platform === 'win32' ? path.resolve(p).toLowerCase() : path.resolve(p));
     const key = Object.keys(records).find((k) => norm(k) === norm(projectDir));
     const last = Date.parse(records[key]?.lastDream);
