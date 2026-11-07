@@ -19,11 +19,11 @@
 **Description:** Set `"model": "opusplan"` in `global/settings.base.json`. Document in the README that it runs Opus in plan mode and Sonnet otherwise, and that `/model` overrides it.
 
 **Acceptance criteria:**
-- [ ] A settings file without `model` gets `opusplan`; one with a `model` keeps it.
+- [x] A settings file without `model` gets `opusplan`; one with a `model` keeps it.
 
 **Verification:**
-- [ ] Preview with an empty `CLAUDE_CONFIG_DIR` shows `"model": "opusplan"` in the diff
-- [ ] Preview on the real config shows no `model` change
+- [x] Preview with an empty `CLAUDE_CONFIG_DIR` shows `"model": "opusplan"` in the diff
+- [x] Preview on the real config shows no `model` change
 
 **Dependencies:** None
 **Files:** `global/settings.base.json`, `README.md`

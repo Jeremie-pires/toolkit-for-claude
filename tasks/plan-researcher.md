@@ -28,7 +28,7 @@ See [todo-researcher.md](todo-researcher.md) for acceptance criteria and verific
 
 ### Phase 1: Agent and default model
 - [x] Task 1: `researcher` agent, held for review
-- [ ] Task 2: `opusplan` as the kit default
+- [x] Task 2: `opusplan` as the kit default
 
 ### Checkpoint 1
 - [ ] Tests pass; `/code-review low`; push; `bootstrap.ps1 -Apply`; restart; `/agents` lists `toolkit:researcher` on `haiku` with only `WebSearch` and `WebFetch`
