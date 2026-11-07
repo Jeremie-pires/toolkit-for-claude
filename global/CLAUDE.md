@@ -51,6 +51,7 @@ Use a skill only when it clearly applies. When several cover the same need, use 
 ## Memory & state
 - Project state (done / next / decisions) lives in `AI_STATE.md`, committed with the project. Rules and methods live in `CLAUDE.md`. Never mix them.
 - Write `AI_STATE.md` as if it were public: no names of people, accounts, emails, employers or clients, no local paths, credentials or access details, nothing that could be used against a person or the project. Use generic terms ("the work account", "a collaborator").
+- Tracking files (`AI_STATE.md`, specs, plans, task lists) record the project's own progress, never one user's local setup: no machine-specific cleanup, local config audits or "on this machine" steps.
 - Claude's auto-memory holds only personal preferences about how to work, never project state.
 - When resuming ("let's resume", "where are we", or the same in the user's language) and `AI_STATE.md` exists, read it first (`/toolkit:load-state`).
 - At the end of a work session or milestone, run `/toolkit:save-state` and stage `AI_STATE.md` with that commit. Not on every commit.
