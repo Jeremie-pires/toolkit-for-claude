@@ -34,7 +34,7 @@ See [todo-researcher.md](todo-researcher.md) for acceptance criteria and verific
 - [x] Tests pass; `/code-review low`; push; `bootstrap.ps1 -Apply`; restart; the installed agent file matches the repo (`model: haiku`, `tools: WebSearch, WebFetch`) and a smoke-test delegation returns sourced findings
 
 ### Phase 2: Rule and evaluation
-- [ ] Task 3: Delegation rule and README
+- [x] Task 3: Delegation rule and README
 - [ ] Task 4: Evaluation on 3 questions
 
 ### Checkpoint 2 (complete)

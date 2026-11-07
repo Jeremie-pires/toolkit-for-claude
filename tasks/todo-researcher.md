@@ -37,11 +37,11 @@
 **Description:** Run `/toolkit:add-rule` with the rule text from the spec, and point the "Library, CLI, API facts" row of the Skills table at the agent. Add a README section on the agent and the rule.
 
 **Acceptance criteria:**
-- [ ] `global/CLAUDE.md` has the rule, with no contradiction with the References section.
-- [ ] The README explains when the agent runs and what it returns.
+- [x] `global/CLAUDE.md` has the rule, with no contradiction with the References section.
+- [x] The README explains when the agent runs and what it returns.
 
 **Verification:**
-- [ ] The user approves the diff shown by `/toolkit:add-rule`
+- [x] The user approves the diff shown by `/toolkit:add-rule`
 
 **Dependencies:** Checkpoint 1
 **Files:** `global/CLAUDE.md`, `README.md`
