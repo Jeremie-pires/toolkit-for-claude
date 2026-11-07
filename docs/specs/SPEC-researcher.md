@@ -50,7 +50,7 @@ Source: code.claude.com/docs/en/sub-agents, code.claude.com/docs/en/model-config
 
 ## Commands
 - Tests: `node --test`; `powershell -NoProfile -File tests/review-guard.tests.ps1`; `powershell -NoProfile -File tests/bootstrap-checks.tests.ps1`
-- Load check: after a plugin refresh and a restart, `/agents` lists `toolkit:researcher` with model `haiku`.
+- Load check: after a plugin refresh and a restart, the plugin cache holds `agents/researcher.md` with `model: haiku`, and a delegation to `toolkit:researcher` returns findings in the output format. (`/agents` no longer lists agents after v2.1.197.)
 
 ## Project structure
 - `plugins/toolkit/agents/researcher.md`: the agent (new folder).
@@ -72,7 +72,7 @@ There is no unit test for a prompt. The evaluation is manual and recorded:
 - Never: `Bash`, `Edit`, `Write` or MCP tools in the agent; the agent applying its findings itself; overriding a model the user already set locally.
 
 ## Success criteria
-- `/agents` shows `toolkit:researcher` on `haiku` with only `WebSearch` and `WebFetch`.
+- The installed `toolkit:researcher` runs on `haiku` with only `WebSearch` and `WebFetch`.
 - On the 3 questions, the delegated run has no more wrong facts than the inline run, every fact has a URL and a quote, and the spot-checked quotes match.
 - The delegated run ends with less main context in use than the inline run on at least 2 of the 3 questions.
 - A research request with no mention of the agent gets delegated in at least 2 of the 3 runs.

@@ -5,7 +5,7 @@ Build [docs/specs/SPEC-researcher.md](../docs/specs/SPEC-researcher.md): a Haiku
 
 ## Architecture decisions
 - **Guard before agent.** The review pattern gains `agents/` in the same task that adds the first agent file, so no agent is ever auto-synced unreviewed.
-- **The rule comes last.** It is added only once `/agents` shows the agent loaded, so the rule never points at an agent that does not exist.
+- **The rule comes last.** It is added only once a smoke test shows the agent loaded, so the rule never points at an agent that does not exist.
 - **Evaluation in fresh sessions.** Each inline and delegated run starts from a new session, so the `ctx` numbers compare like with like. The user starts the sessions.
 
 ## Dependency graph
@@ -14,7 +14,7 @@ Task 1: agent file + review pattern
       │
 Task 2: opusplan default          (independent of Task 1)
       │
-Checkpoint 1: push, -Apply, restart, /agents
+Checkpoint 1: push, -Apply, restart, smoke test
       │
 Task 3: delegation rule + README
       │
@@ -31,7 +31,7 @@ See [todo-researcher.md](todo-researcher.md) for acceptance criteria and verific
 - [x] Task 2: `opusplan` as the kit default
 
 ### Checkpoint 1
-- [ ] Tests pass; `/code-review low`; push; `bootstrap.ps1 -Apply`; restart; `/agents` lists `toolkit:researcher` on `haiku` with only `WebSearch` and `WebFetch`
+- [x] Tests pass; `/code-review low`; push; `bootstrap.ps1 -Apply`; restart; the installed agent file matches the repo (`model: haiku`, `tools: WebSearch, WebFetch`) and a smoke-test delegation returns sourced findings
 
 ### Phase 2: Rule and evaluation
 - [ ] Task 3: Delegation rule and README

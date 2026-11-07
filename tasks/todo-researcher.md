@@ -30,8 +30,8 @@
 **Scope:** XS
 
 ## Checkpoint 1
-- [ ] All tests pass; `/code-review low`; push; `bootstrap.ps1 -Apply`; restart
-- [ ] `/agents` lists `toolkit:researcher` on `haiku` with only `WebSearch` and `WebFetch`
+- [x] All tests pass; `/code-review low`; push; `bootstrap.ps1 -Apply`; restart
+- [x] The installed agent file matches the repo (`model: haiku`, `tools: WebSearch, WebFetch`) and a smoke-test delegation returns sourced findings (`/agents` no longer lists agents after v2.1.197)
 
 ## Task 3: Delegation rule and README
 **Description:** Run `/toolkit:add-rule` with the rule text from the spec, and point the "Library, CLI, API facts" row of the Skills table at the agent. Add a README section on the agent and the rule.

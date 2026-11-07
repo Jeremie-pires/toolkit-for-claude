@@ -4,13 +4,13 @@ _Updated: 2026-11-07_
 ## Done
 - `/toolkit:dream` tasks 1 to 5 and 7 (plan in `tasks/`). Task 6 dry run: the status line segment and the closing steps work; the run found no recurring pattern, so accepting a proposal is not tested yet.
 - Hygiene batch: `save-state` checks the tracking-files rule; `bootstrap.ps1` warns about Bash rules with `:*` before their end (they never match) and about user skills named like a kit skill; the upstream check compares against the common commit, so local commits in the kit clone are no longer held for review; `bootstrap.ps1`, the status line and the dream script all use `CLAUDE_CONFIG_DIR` when it is set.
-- Researcher (spec `docs/specs/SPEC-researcher.md`, plan `tasks/plan-researcher.md`): Tasks 1 and 2 done. The `toolkit:researcher` agent (Haiku, `WebSearch` and `WebFetch` only, sourced findings) ships in the plugin; auto-sync holds `plugins/*/agents/` for review; `opusplan` is the kit default model.
+- Researcher (spec `docs/specs/SPEC-researcher.md`, plan `tasks/plan-researcher.md`): Tasks 1 and 2 and Checkpoint 1 done; the load check is a smoke-test delegation, since `/agents` no longer lists agents. The `toolkit:researcher` agent (Haiku, `WebSearch` and `WebFetch` only, sourced findings) ships in the plugin; auto-sync holds `plugins/*/agents/` for review; `opusplan` is the kit default model.
 
 ## Current state
 Plugin `toolkit`: 5 commands, 3 skills, 1 agent (`researcher`), 1 script (`dream-digest.mjs`: redacted digest, `--record`, `--cleanup`). Tests: `node --test`, `tests/review-guard.tests.ps1` and `tests/bootstrap-checks.tests.ps1`.
 
 ## Next steps
-1. Researcher Checkpoint 1: after `bootstrap.ps1 -Apply` and a restart, `/agents` lists `toolkit:researcher` on `haiku` with only `WebSearch` and `WebFetch`. Then Task 3 (delegation rule through `/toolkit:add-rule`, README) and Task 4 (evaluation on 3 questions).
+1. Researcher Task 3 (delegation rule through `/toolkit:add-rule`, README) and Task 4 (evaluation on 3 questions).
 2. Dream Task 6: once real sessions show a recurring pattern, run `/toolkit:dream` and accept one proposal; then tick Checkpoints 3 and 4.
 3. Later: digest ignores "no match" exits; `bootstrap.ps1` creates or reports `~/.claude/rules/`; CI; a Node bootstrap for every OS.
 4. Pre-rename installs: on "Marketplace 'workshop' not found", run `claude plugin marketplace add` again, then `bootstrap.ps1 -Apply`.
