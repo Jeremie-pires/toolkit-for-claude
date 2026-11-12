@@ -106,7 +106,7 @@ To take improvements from this repo, use **Sync fork** on GitHub and read the di
 | File | Action |
 |---|---|
 | `~/.claude/settings.json` | Merged. Kit keys are added and everything local is kept. Permissions are unioned. The kit's own hooks (commands calling `.claude-kit`) are replaced and other hooks are kept. The `workshop` marketplace points at your clone's `origin`. The file is not written if it is invalid JSON |
-| `~/.claude/CLAUDE.md` | Updated from `global/CLAUDE.md`, with a backup. If you edited it, your edit and the kit's changes are merged three ways (`git merge-file`). If both touched the same lines, the file is left as it is, the merge with conflict markers goes to `CLAUDE.md.kit-merge`, and a warning is raised |
+| `~/.claude/CLAUDE.md` | Updated from `global/CLAUDE.md`, with a backup. If you edited it, your edit and the kit's changes are merged three ways (`git merge-file`). A change of line endings alone (CRLF or LF) does not count as an edit. If both touched the same lines, the file is left as it is, the merge with conflict markers goes to `CLAUDE.md.kit-merge`, and a warning is raised |
 | `~/.claude/statusline.js` | Same rule as `CLAUDE.md`. A merged script is also checked with `node --check`, and is not deployed if the check fails or `node` is missing |
 | `~/.claude/claude-kit-base/` | The kit's version of each file at the last sync: the base of the next merge |
 | `~/.claude/rules/` | Created if missing. Nothing inside is ever read or written |

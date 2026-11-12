@@ -221,6 +221,14 @@ function Initialize-RulesDir($claudeDir) {
   Say "+ created $rules"
 }
 function FileHash($p) { if (Test-Path $p) { return (Get-FileHash $p).Hash } return '' }
+# An editor or a tool that rewrites CRLF as LF (or back) changes no line, so kit files are compared
+# and merged on their LF form
+function Read-TextLF($p) { return [IO.File]::ReadAllText($p, $utf8).Replace("`r`n", "`n") }
+function TextHash($p) {
+  if (-not (Test-Path $p)) { return '' }
+  $sha256 = [Security.Cryptography.SHA256]::Create()
+  return (($sha256.ComputeHash($utf8.GetBytes((Read-TextLF $p))) | ForEach-Object { $_.ToString('X2') }) -join '')
+}
 function Backup($p) {
   if (-not (Test-Path $p)) { return }
   $leaf = Split-Path $p -Leaf
@@ -278,11 +286,30 @@ function Find-BaseInHistory($kitDir, $key, $hash) {
   return $null
 }
 # Three-way merge into a temp copy of $dst; returns git merge-file's exit code
-# (0 clean, 1 to 127 conflicts, anything else an error: the count is capped at 127 and a fatal error exits 128)
+# (0 clean, 1 to 127 conflicts, anything else an error: the count is capped at 127 and a fatal error exits 128).
+# The inputs are merged as LF, so a side that only changed line endings does not clash on every line;
+# the result takes the kit's line endings.
 function Invoke-MergeFile($dst, $basePath, $src, $out) {
-  Copy-Item $dst $out -Force
-  $null = & git merge-file -q -L local -L kit-base -L kit $out $basePath $src 2>&1
-  return $LASTEXITCODE
+  $temps = @()
+  $inputs = foreach ($p in @($basePath, $src)) {
+    # A missing input is passed as is, so git reports the error
+    if (-not (Test-Path $p)) { $p; continue }
+    $t = [IO.Path]::GetTempFileName()
+    [IO.File]::WriteAllText($t, (Read-TextLF $p), $utf8)
+    $temps += $t
+    $t
+  }
+  try {
+    [IO.File]::WriteAllText($out, (Read-TextLF $dst), $utf8)
+    $null = & git merge-file -q -L local -L kit-base -L kit $out $inputs[0] $inputs[1] 2>&1
+    $code = $LASTEXITCODE
+    if ((Test-Path $src) -and [IO.File]::ReadAllText($src, $utf8).Contains("`r`n")) {
+      [IO.File]::WriteAllText($out, ([IO.File]::ReadAllText($out, $utf8).Replace("`n", "`r`n")), $utf8)
+    }
+    return $code
+  } finally {
+    if ($temps.Count) { Remove-Item $temps -Force -ErrorAction SilentlyContinue }
+  }
 }
 # A text merge of code can be clean for git and still not parse; returns why it cannot be deployed, or $null
 function Test-ScriptSyntax($path) {
@@ -300,9 +327,9 @@ function Merge-KitFile($src, $dst, $key) {
   if (-not (Test-Path $src)) { return }
   $basePath = Join-Path (Join-Path $claude 'claude-kit-base') $key
   $mergePath = "$dst.kit-merge"
-  $srcHash = FileHash $src
-  $dstHash = FileHash $dst
-  $baseHash = FileHash $basePath
+  $srcHash = TextHash $src
+  $dstHash = TextHash $dst
+  $baseHash = TextHash $basePath
 
   if (-not $dstHash) {
     if (-not $Apply) { Say "~ would create $dst"; return }
@@ -317,7 +344,8 @@ function Merge-KitFile($src, $dst, $key) {
   }
   if ($baseHash -and $srcHash -eq $baseHash) { Say "= $dst (kit unchanged, local edits kept)"; return }
 
-  $notEdited = if ($baseHash) { $dstHash -eq $baseHash } else { -not $applied[$key] -or $dstHash -eq $applied[$key] }
+  # applied holds the raw hash of what the kit wrote, so it is compared with the raw file
+  $notEdited = if ($baseHash) { $dstHash -eq $baseHash } else { -not $applied[$key] -or (FileHash $dst) -eq $applied[$key] }
   if ($notEdited) {
     if (-not $Apply) { Say "~ would update $dst"; return }
     Write-KitFile $src $src $dst $key

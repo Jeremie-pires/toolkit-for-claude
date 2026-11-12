@@ -6,7 +6,7 @@ $ErrorActionPreference = 'Continue'
 # Load only the functions under test, so the script itself never runs
 $bootstrap = Join-Path $PSScriptRoot '..\bootstrap.ps1'
 $ast = [System.Management.Automation.Language.Parser]::ParseFile($bootstrap, [ref]$null, [ref]$null)
-foreach ($name in 'Get-HeldChanges', 'Find-PendingAutostash', 'Write-AutostashWarning', 'Update-KitClone', 'Get-RulesHint', 'Initialize-RulesDir', 'FileHash', 'Backup', 'Get-GitBytes', 'Find-BaseInHistory', 'Save-KitBase', 'Write-KitFile', 'Invoke-MergeFile', 'Test-ScriptSyntax', 'Merge-KitFile', 'Test-PluginBehind', 'Get-WarningText', 'Get-HookContext') {
+foreach ($name in 'Get-HeldChanges', 'Find-PendingAutostash', 'Write-AutostashWarning', 'Update-KitClone', 'Get-RulesHint', 'Initialize-RulesDir', 'FileHash', 'Read-TextLF', 'TextHash', 'Backup', 'Get-GitBytes', 'Find-BaseInHistory', 'Save-KitBase', 'Write-KitFile', 'Invoke-MergeFile', 'Test-ScriptSyntax', 'Merge-KitFile', 'Test-PluginBehind', 'Get-WarningText', 'Get-HookContext') {
   $fn = $ast.Find({ param($n) $n -is [System.Management.Automation.Language.FunctionDefinitionAst] -and $n.Name -eq $name }, $true)
   if (-not $fn) { throw "$name not found in bootstrap.ps1" }
   Invoke-Expression $fn.Extent.Text
@@ -370,6 +370,27 @@ try {
   $c = NewMergeCase 'crlf' $crlf2 "$crlf1+ my line`r`n" $crlf1
   Merge-KitFile $c.src $c.dst 'CLAUDE.md'
   Check 'merge, CRLF: both changes, line endings kept' (Text $c.dst) ("# rules`nintro v2`n`nkit line`n`nend`n+ my line`n" -replace "`n", "`r`n")
+
+  # A deployed file rewritten with LF endings and nothing else is not a local edit
+  $c = NewMergeCase 'lf-only' $crlf1 $v1 $crlf1
+  Merge-KitFile $c.src $c.dst 'CLAUDE.md'
+  Check 'merge, LF-only rewrite: reported unchanged' (@($said | Where-Object { $_ -match '\(unchanged\)' }).Count) 1
+  Check 'merge, LF-only rewrite: dst untouched' (Text $c.dst) $v1
+  Check 'merge, LF-only rewrite: no backup' (Backups $c) 0
+  Check 'merge, LF-only rewrite: no warning' $warnings.Count 0
+
+  $c = NewMergeCase 'lf-only-kit-changed' $crlf2 $v1 $crlf1
+  Merge-KitFile $c.src $c.dst 'CLAUDE.md'
+  Check 'merge, LF-only rewrite then kit change: kit version deployed' (Text $c.dst) $crlf2
+  Check 'merge, LF-only rewrite then kit change: no .kit-merge' (Test-Path $c.merge) $false
+  Check 'merge, LF-only rewrite then kit change: no warning' $warnings.Count 0
+
+  # A real local edit saved with LF still merges line by line with a CRLF kit, in the kit's endings
+  $c = NewMergeCase 'lf-edit' $crlf2 "$v1+ my line`n" $crlf1
+  Merge-KitFile $c.src $c.dst 'CLAUDE.md'
+  Check 'merge, LF edit vs CRLF kit: both changes, kit line endings' (Text $c.dst) ("# rules`nintro v2`n`nkit line`n`nend`n+ my line`n" -replace "`n", "`r`n")
+  Check 'merge, LF edit vs CRLF kit: no .kit-merge' (Test-Path $c.merge) $false
+  Check 'merge, LF edit vs CRLF kit: no warning' $warnings.Count 0
 
   # Both sides changed the same line: dst kept, markers only in .kit-merge
   $c = NewMergeCase 'conflict' $v2 "# rules`nintro mine`n`nkit line`n`nend`n" $v1
