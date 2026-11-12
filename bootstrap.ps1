@@ -99,6 +99,17 @@ function Set-ConfigDirPaths($base, $configDir) {
 function Get-HeldChanges($kitDir, $pattern) {
   @(& git -C $kitDir diff --name-only 'HEAD...@{u}' 2>$null | Where-Object { $_ -match $pattern })
 }
+# The plugin is refreshed from the fork on GitHub, so it is behind when it was installed from an
+# older upstream commit. Never while upstream has commits the clone has not taken: those may be held for review.
+function Test-PluginBehind($kitDir, $installedSha) {
+  if (-not $installedSha) { return $false }
+  $upstream = (& git -C $kitDir rev-parse '@{u}' 2>$null)
+  if ($LASTEXITCODE -ne 0 -or $installedSha -eq $upstream) { return $false }
+  $null = & git -C $kitDir merge-base --is-ancestor '@{u}' HEAD 2>&1
+  if ($LASTEXITCODE -ne 0) { return $false }
+  $null = & git -C $kitDir merge-base --is-ancestor $installedSha '@{u}' 2>&1
+  return ($LASTEXITCODE -eq 0)
+}
 # The stash entry git leaves when it could not re-apply the autostash after a rebase, or $null
 function Find-PendingAutostash($kitDir) {
   @(& git -C $kitDir stash list --format='%gd%x09%gs' 2>$null) |
@@ -489,7 +500,7 @@ if ($shadowed.Count) {
   Warn "user skills in $claude\skills share a name with kit plugin skills ($($shadowed -join ', ')); remove the local copy if the kit's version replaces it"
 }
 
-# 4. Plugins: install the missing ones; after a pull with new commits, refresh the kit plugin
+# 4. Plugins: install the missing ones; refresh the kit plugin when it is behind the clone
 $installedPath = Join-Path $claude 'plugins\installed_plugins.json'
 $installed = @()
 $installedJson = ReadJson $installedPath
@@ -522,7 +533,12 @@ if ($installed -contains 'claude-kit@workshop') {
   }
 }
 
-if ($Apply -and $pulled -and $claudeCli -and ($installed -contains 'toolkit@workshop')) {
+# Also catches a clone updated by hand, or a refresh that failed on an earlier run
+$pluginSha = $null
+if ($installed -contains 'toolkit@workshop') { $pluginSha = @($installedJson.plugins.'toolkit@workshop')[0].gitCommitSha }
+$pluginBehind = $pulled -or (Test-PluginBehind $KitDir $pluginSha)
+if ($pluginBehind -and -not $Apply -and ($installed -contains 'toolkit@workshop')) { Say '~ would refresh toolkit@workshop' }
+if ($Apply -and $pluginBehind -and $claudeCli -and ($installed -contains 'toolkit@workshop')) {
   Say '+ refreshing toolkit@workshop (restart Claude Code to load it)'
   if (-not (Run-Claude @('plugin', 'marketplace', 'update', 'workshop'))) { Warn 'marketplace update failed for workshop' }
   elseif (-not (Run-Claude @('plugin', 'update', 'toolkit@workshop', '--scope', 'user'))) { Warn 'plugin update failed for toolkit@workshop' }

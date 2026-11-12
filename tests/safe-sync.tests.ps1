@@ -6,7 +6,7 @@ $ErrorActionPreference = 'Continue'
 # Load only the functions under test, so the script itself never runs
 $bootstrap = Join-Path $PSScriptRoot '..\bootstrap.ps1'
 $ast = [System.Management.Automation.Language.Parser]::ParseFile($bootstrap, [ref]$null, [ref]$null)
-foreach ($name in 'Get-HeldChanges', 'Find-PendingAutostash', 'Write-AutostashWarning', 'Update-KitClone', 'Get-RulesHint', 'Initialize-RulesDir', 'FileHash', 'Backup', 'Get-GitBytes', 'Find-BaseInHistory', 'Save-KitBase', 'Write-KitFile', 'Invoke-MergeFile', 'Test-ScriptSyntax', 'Merge-KitFile') {
+foreach ($name in 'Get-HeldChanges', 'Find-PendingAutostash', 'Write-AutostashWarning', 'Update-KitClone', 'Get-RulesHint', 'Initialize-RulesDir', 'FileHash', 'Backup', 'Get-GitBytes', 'Find-BaseInHistory', 'Save-KitBase', 'Write-KitFile', 'Invoke-MergeFile', 'Test-ScriptSyntax', 'Merge-KitFile', 'Test-PluginBehind') {
   $fn = $ast.Find({ param($n) $n -is [System.Management.Automation.Language.FunctionDefinitionAst] -and $n.Name -eq $name }, $true)
   if (-not $fn) { throw "$name not found in bootstrap.ps1" }
   Invoke-Expression $fn.Extent.Text
@@ -495,6 +495,23 @@ try {
   }
   $Quiet = $true
   $Force = $false
+
+  # Plugin refresh: needed when the installed plugin is an older upstream commit, even if
+  # this run pulled nothing, but never while upstream commits wait for review
+  $f = NewFixture 'plugin'
+  $old = RunGit $f.kit rev-parse HEAD
+  PushUpstream $f 'a.txt' "1 up`n2`n3`n4`n5`n"
+  $null = RunGit $f.kit pull -q
+  $new = RunGit $f.kit rev-parse HEAD
+  Check 'plugin: older installed commit is behind' (Test-PluginBehind $f.kit $old) $true
+  Check 'plugin: installed at upstream is not behind' (Test-PluginBehind $f.kit $new) $false
+  Check 'plugin: no recorded commit is not behind' (Test-PluginBehind $f.kit $null) $false
+  Check 'plugin: unknown commit is not behind' (Test-PluginBehind $f.kit ('0' * 40)) $false
+  CommitFile $f.kit 'b.txt' 'local'
+  Check 'plugin: local commits alone do not make it behind' (Test-PluginBehind $f.kit $new) $false
+  PushUpstream $f 'c.txt' 'held'
+  $null = RunGit $f.kit fetch -q
+  Check 'plugin: upstream commits not yet in the clone block the refresh' (Test-PluginBehind $f.kit $old) $false
 
   # End to end: while edits wait in the autostash, the deployed CLAUDE.md is never replaced,
   # neither on the run that parks them nor on a later throttled run

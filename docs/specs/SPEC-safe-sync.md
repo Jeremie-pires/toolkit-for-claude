@@ -55,6 +55,7 @@ if ($LASTEXITCODE -ne 0) {
 - Preview (no `-Apply`) fetches but never rebases: it prints `~ would fast-forward the kit by N upstream commit(s)` or `~ would rebase L local commit(s) onto N upstream commit(s)`, with `, carrying uncommitted edits` when the tree has them, or `= kit up to date`.
 - At the start of every run, throttled or not, such an entry also sets `$stashPending` and the run skips the update itself, so later launches neither bury the parked edits under more upstream changes nor sync files, and keep warning until the user follows the recovery steps.
 - `lastPull` and `$pulled` keep their meaning: `$pulled` is true when `HEAD` moved.
+- Plugin refresh (added at rollout, 2026-11-12): the `toolkit` plugin is refreshed when this run pulled, or when its recorded `gitCommitSha` is an older ancestor of `@{u}` and the clone already contains `@{u}`. A clone updated by hand, or a refresh that failed earlier, is caught at the next run. Never while `@{u}` has commits the clone has not taken, since the refresh installs the fork's latest commit and would bypass the review hold.
 
 ## Module `file-merge`
 Replace `Sync-File`'s "overwrite or keep" with a three-way merge. Applies to `CLAUDE.md`, and to `statusline.js` with the extra check in Resolved questions.
