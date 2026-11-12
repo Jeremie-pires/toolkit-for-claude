@@ -12,8 +12,10 @@
   update runs at most once every 24 hours, upstream changes to files that run code
   (bootstrap.ps1, settings.base.json, statusline.js, plugin hooks, agents and scripts) are held back until a
   manual -Apply, and warnings go to ~/.claude/claude-kit-sync.json (the status line shows
-  them as "kit!"). The same warnings are printed as one JSON line that the hook hands to
-  Claude as session context, so Claude can explain them at the next message.
+  them as "kit!"). With warnings left, a -Quiet run writes them to stderr and exits 2, so
+  the asyncRewake hook wakes Claude to raise them. A second, synchronous hook runs
+  -Report, which only prints the last run's warnings as session context, so they also
+  reach Claude's first reply.
 
   The clone is updated with git rebase --autostash, so local commits and uncommitted edits
   are carried over; a conflict is aborted and leaves the clone as it was. Preview only fetches.
@@ -31,6 +33,8 @@ param(
   [switch]$Apply,
   [switch]$Quiet,
   [switch]$Force,
+  # Only print the last run's warnings for the synchronous SessionStart hook
+  [switch]$Report,
   [string]$KitDir = (Join-Path $HOME '.claude-kit'),
   # Only used when $KitDir does not exist yet; afterwards the clone's own origin is the source
   [string]$Repo
@@ -50,11 +54,11 @@ $warnings = New-Object System.Collections.Generic.List[string]
 
 function Say($m) { if (-not $Quiet) { Write-Host $m } }
 function Warn($m) { $warnings.Add($m); Say "! $m" }
-# The status line is not shown everywhere (the desktop app), so the hook also hands the warnings to Claude
-function Get-HookContext($warnings, $kitDir, $statePath) {
+# The status line is not shown everywhere (the desktop app), so the hooks also hand the warnings to Claude
+function Get-WarningText($warnings, $kitDir, $statePath) {
   $count = @($warnings).Count
   if (-not $count) { return $null }
-  # Claude Code caps additionalContext at 10,000 characters
+  # Claude Code caps hook output at 10,000 characters
   $max = 8000
   $lines = @("Kit sync (bootstrap.ps1) left $count warning(s). Kit clone: $kitDir. State file: $statePath.")
   $i = 0
@@ -64,8 +68,13 @@ function Get-HookContext($warnings, $kitDir, $statePath) {
     if ((($lines + $line) -join "`n").Length -gt $max) { $lines += '(more in the state file)'; break }
     $lines += $line
   }
+  return ($lines -join "`n")
+}
+function Get-HookContext($warnings, $kitDir, $statePath) {
+  $text = Get-WarningText $warnings $kitDir $statePath
+  if (-not $text) { return $null }
   $payload = [pscustomobject]@{
-    hookSpecificOutput = [pscustomobject]@{ hookEventName = 'SessionStart'; additionalContext = ($lines -join "`n") }
+    hookSpecificOutput = [pscustomobject]@{ hookEventName = 'SessionStart'; additionalContext = $text }
   }
   $json = $payload | ConvertTo-Json -Compress -Depth 3
   # ASCII only, so the console code page cannot garble a path with accents
@@ -361,6 +370,17 @@ function Merge-KitFile($src, $dst, $key) {
   }
 }
 
+# -Report (the synchronous SessionStart hook): Claude's first reply waits for it, so the last run's
+# warnings reach Claude however fast the user types. No git and no writes, so it stays well under a second.
+if ($Report) {
+  $last = ReadJson $statePath
+  $recorded = @()
+  if (HasProp $last 'warnings') { $recorded = @($last.warnings | Where-Object { $_ }) }
+  $hookLine = Get-HookContext $recorded $KitDir $statePath
+  if ($hookLine) { [Console]::Out.WriteLine($hookLine) }
+  exit 0
+}
+
 if (-not (Test-Path $claude)) { New-Item -ItemType Directory -Force $claude | Out-Null }
 
 $state = ReadJson $statePath
@@ -579,8 +599,12 @@ if ($Apply) {
   Say "`nPreview only. Re-run with -Apply to write."
 }
 
-# 6. Hand the warnings to Claude: the async SessionStart hook delivers this line as session context
-if ($Quiet) {
-  $hookLine = Get-HookContext $warnings $KitDir $statePath
-  if ($hookLine) { [Console]::Out.WriteLine($hookLine) }
+# 6. Wake Claude: the asyncRewake hook shows stderr to Claude on exit code 2, even before the user's first prompt
+if ($Quiet -and $warnings.Count) {
+  # Raw UTF-8 bytes, so the console code page cannot garble a path with accents
+  $bytes = $utf8.GetBytes((Get-WarningText $warnings $KitDir $statePath) + "`n")
+  $stderr = [Console]::OpenStandardError()
+  $stderr.Write($bytes, 0, $bytes.Length)
+  $stderr.Flush()
+  exit 2
 }

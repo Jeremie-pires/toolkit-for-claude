@@ -6,7 +6,7 @@ $ErrorActionPreference = 'Continue'
 # Load only the functions under test, so the script itself never runs
 $bootstrap = Join-Path $PSScriptRoot '..\bootstrap.ps1'
 $ast = [System.Management.Automation.Language.Parser]::ParseFile($bootstrap, [ref]$null, [ref]$null)
-foreach ($name in 'Get-HeldChanges', 'Find-PendingAutostash', 'Write-AutostashWarning', 'Update-KitClone', 'Get-RulesHint', 'Initialize-RulesDir', 'FileHash', 'Backup', 'Get-GitBytes', 'Find-BaseInHistory', 'Save-KitBase', 'Write-KitFile', 'Invoke-MergeFile', 'Test-ScriptSyntax', 'Merge-KitFile', 'Test-PluginBehind', 'Get-HookContext') {
+foreach ($name in 'Get-HeldChanges', 'Find-PendingAutostash', 'Write-AutostashWarning', 'Update-KitClone', 'Get-RulesHint', 'Initialize-RulesDir', 'FileHash', 'Backup', 'Get-GitBytes', 'Find-BaseInHistory', 'Save-KitBase', 'Write-KitFile', 'Invoke-MergeFile', 'Test-ScriptSyntax', 'Merge-KitFile', 'Test-PluginBehind', 'Get-WarningText', 'Get-HookContext') {
   $fn = $ast.Find({ param($n) $n -is [System.Management.Automation.Language.FunctionDefinitionAst] -and $n.Name -eq $name }, $true)
   if (-not $fn) { throw "$name not found in bootstrap.ps1" }
   Invoke-Expression $fn.Extent.Text
@@ -82,6 +82,22 @@ function Snapshot($repo) {
 function Run($f) {
   $warnings.Clear()
   Update-KitClone $f.kit
+}
+# Runs the real script as the hooks do; stdout and stderr kept apart and decoded as UTF-8
+function RunBootstrap([string[]]$scriptArgs) {
+  $psi = New-Object System.Diagnostics.ProcessStartInfo
+  $psi.FileName = 'powershell'
+  $psi.Arguments = (@('-NoProfile', '-ExecutionPolicy', 'Bypass', '-File', "`"$bootstrap`"") + $scriptArgs) -join ' '
+  $psi.UseShellExecute = $false
+  $psi.RedirectStandardOutput = $true
+  $psi.RedirectStandardError = $true
+  $psi.StandardOutputEncoding = $utf8
+  $psi.StandardErrorEncoding = $utf8
+  $p = [Diagnostics.Process]::Start($psi)
+  $errTask = $p.StandardError.ReadToEndAsync()
+  $out = $p.StandardOutput.ReadToEnd()
+  $p.WaitForExit()
+  [pscustomobject]@{ code = $p.ExitCode; out = $out.Trim(); err = $errTask.Result.Trim() }
 }
 
 try {
@@ -513,7 +529,8 @@ try {
   $null = RunGit $f.kit fetch -q
   Check 'plugin: upstream commits not yet in the clone block the refresh' (Test-PluginBehind $f.kit $old) $false
 
-  # Hook context: the warnings reach Claude as one ASCII JSON line, within the context size cap
+  # Hook output: the warnings reach Claude as plain text (rewake) or one ASCII JSON line (-Report), within the size cap
+  Check 'warning text: none without warnings' ($null -eq (Get-WarningText @() 'C:\kit' 'C:\cfg\state.json')) $true
   Check 'hook context: none without warnings' ($null -eq (Get-HookContext @() 'C:\kit' 'C:\cfg\state.json')) $true
   $line = Get-HookContext @('first warning', 'second warning') 'C:\kit' 'C:\cfg\state.json'
   Check 'hook context: one line' @($line -split "`n").Count 1
@@ -525,21 +542,38 @@ try {
   $line = Get-HookContext @("conflict in C:\Users\r${accent}mi\CLAUDE.md") 'C:\kit' 'C:\cfg\state.json'
   Check 'hook context: ASCII only' ($line -match '[^\x00-\x7F]') $false
   Check 'hook context: accent decodes back' (($line | ConvertFrom-Json).hookSpecificOutput.additionalContext.Contains("r${accent}mi")) $true
-  $text = (Get-HookContext @(1..20 | ForEach-Object { 'x' * 1000 }) 'C:\kit' 'C:\cfg\state.json' | ConvertFrom-Json).hookSpecificOutput.additionalContext
-  Check 'hook context: under the 10,000 character cap' ($text.Length -lt 10000) $true
-  Check 'hook context: cut list says so' ($text.EndsWith('(more in the state file)')) $true
+  $text = Get-WarningText @(1..20 | ForEach-Object { 'x' * 1000 }) 'C:\kit' 'C:\cfg\state.json'
+  Check 'warning text: under the 10,000 character cap' ($text.Length -lt 10000) $true
+  Check 'warning text: cut list says so' ($text.EndsWith('(more in the state file)')) $true
 
-  # End to end: a clean hook run prints nothing on stdout
+  # End to end: a clean hook run stays silent and does not wake Claude
   $f = NewFixture 'e2e-clean'
   PushUpstream $f 'a.txt' "1 up`n2`n3`n4`n5`n"
   $config = Join-Path $root 'e2e-clean-config'
   New-Item -ItemType Directory -Force $config | Out-Null
   $env:CLAUDE_CONFIG_DIR = $config
   try {
-    $out = @(& powershell -NoProfile -File $bootstrap -Apply -Quiet -KitDir $f.kit 2>$null | Where-Object { "$_".Trim() })
+    $r = RunBootstrap @('-Apply', '-Quiet', '-KitDir', "`"$($f.kit)`"")
     $recorded = [IO.File]::ReadAllText((Join-Path $config 'claude-kit-sync.json'), $utf8) | ConvertFrom-Json
     Check 'e2e clean run: no warning recorded' @($recorded.warnings).Count 0
-    Check 'e2e clean run: stdout empty' $out.Count 0
+    Check 'e2e clean run: exit code 0' $r.code 0
+    Check 'e2e clean run: stdout empty' $r.out ''
+    Check 'e2e clean run: stderr empty' $r.err ''
+    $r = RunBootstrap @('-Report', '-KitDir', "`"$($f.kit)`"")
+    Check 'e2e report, no warning: exit code 0' $r.code 0
+    Check 'e2e report, no warning: stdout empty' $r.out ''
+  } finally {
+    Remove-Item env:CLAUDE_CONFIG_DIR -ErrorAction SilentlyContinue
+  }
+
+  # End to end: -Report with no state file and no config folder writes nothing, not even the folder
+  $config = Join-Path $root 'e2e-report-missing'
+  $env:CLAUDE_CONFIG_DIR = $config
+  try {
+    $r = RunBootstrap @('-Report', '-KitDir', "`"$($f.kit)`"")
+    Check 'e2e report, no state: exit code 0' $r.code 0
+    Check 'e2e report, no state: stdout empty' $r.out ''
+    Check 'e2e report, no state: config folder not created' (Test-Path $config) $false
   } finally {
     Remove-Item env:CLAUDE_CONFIG_DIR -ErrorAction SilentlyContinue
   }
@@ -561,16 +595,22 @@ try {
   PushUpstream $f 'global/CLAUDE.md' "# rules`nkit v2`n"
   $env:CLAUDE_CONFIG_DIR = $config
   try {
-    $out = @(& powershell -NoProfile -File $bootstrap -Apply -Quiet -KitDir $f.kit 2>$null | Where-Object { "$_".Trim() })
-    Check 'e2e parking run: stdout is one line' $out.Count 1
-    Check 'e2e parking run: stdout hands the warning to Claude' (($out[0] | ConvertFrom-Json).hookSpecificOutput.additionalContext -match 'stash drop') $true
+    $r = RunBootstrap @('-Apply', '-Quiet', '-KitDir', "`"$($f.kit)`"")
+    Check 'e2e parking run: exit code 2 wakes Claude' $r.code 2
+    Check 'e2e parking run: stderr hands the warning to Claude' ($r.err -match 'Kit sync \(bootstrap\.ps1\) left 1 warning' -and $r.err -match 'stash drop') $true
+    Check 'e2e parking run: stdout empty' $r.out ''
     Check 'e2e parking run: edit parked in the stash' ([bool](Find-PendingAutostash $f.kit)) $true
     Check 'e2e parking run: deployed file kept' ([IO.File]::ReadAllText($deployed, $utf8)) "# rules`nkit v1 + my section`n"
     Check 'e2e parking run: no base copy written' (Test-Path (Join-Path $config 'claude-kit-base')) $false
-    $null = & powershell -NoProfile -File $bootstrap -Apply -Quiet -KitDir $f.kit 2>&1
+    $r = RunBootstrap @('-Apply', '-Quiet', '-KitDir', "`"$($f.kit)`"")
     $recorded = [IO.File]::ReadAllText((Join-Path $config 'claude-kit-sync.json'), $utf8) | ConvertFrom-Json
     Check 'e2e throttled run: deployed file kept' ([IO.File]::ReadAllText($deployed, $utf8)) "# rules`nkit v1 + my section`n"
     Check 'e2e throttled run: warning recorded' (@($recorded.warnings | Where-Object { $_ -match 'stash drop' }).Count) 1
+    Check 'e2e throttled run: still wakes Claude' $r.code 2
+    $r = RunBootstrap @('-Report', '-KitDir', "`"$($f.kit)`"")
+    Check 'e2e report: exit code 0' $r.code 0
+    Check 'e2e report: one JSON line' @($r.out -split "`n").Count 1
+    Check 'e2e report: context names the warning' (($r.out | ConvertFrom-Json).hookSpecificOutput.additionalContext -match 'stash drop') $true
   } finally {
     Remove-Item env:CLAUDE_CONFIG_DIR -ErrorAction SilentlyContinue
   }

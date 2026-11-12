@@ -53,8 +53,13 @@
         "hooks": [
           {
             "type": "command",
+            "command": "powershell -NoProfile -ExecutionPolicy Bypass -File \"$USERPROFILE/.claude-kit/bootstrap.ps1\" -Report",
+            "timeout": 15
+          },
+          {
+            "type": "command",
             "command": "powershell -NoProfile -ExecutionPolicy Bypass -File \"$USERPROFILE/.claude-kit/bootstrap.ps1\" -Apply -Quiet",
-            "async": true,
+            "asyncRewake": true,
             "timeout": 180
           }
         ]
