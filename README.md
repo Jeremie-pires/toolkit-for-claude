@@ -121,7 +121,7 @@ On every launch, an async `SessionStart` hook runs `bootstrap.ps1 -Apply -Quiet`
 
 The clone is updated with `git rebase --autostash`: your local commits are replayed on top of the new upstream commits, and uncommitted edits are put aside and then put back. Untracked files are left alone. If a local commit conflicts with upstream, or an untracked file is in the way of an incoming one, the rebase is aborted and the clone is left exactly as it was. If uncommitted edits clash with upstream when git puts them back, git keeps them in the stash and leaves conflict markers in the clashing files. The kit then stops updating the clone and the deployed files until you sort it out (see [Troubleshooting](#troubleshooting)). A preview (no `-Apply`) only fetches and prints what an update would do.
 
-Warnings (pull failed, update skipped on a conflict, edits waiting in the stash, a merge conflict or a failed check on a deployed file, credentials in settings, invalid JSON, a Bash rule with `:*` before its end, a user skill named like a kit skill) go to `~/.claude/claude-kit-sync.json`, and the status line shows `kit! (n)` while there are any.
+Warnings (pull failed, update skipped on a conflict, edits waiting in the stash, a merge conflict or a failed check on a deployed file, credentials in settings, invalid JSON, a Bash rule with `:*` before its end, a user skill named like a kit skill) go to `~/.claude/claude-kit-sync.json`, and the status line shows `kit! (n)` while there are any. The hook also passes them to Claude as session context. At your next message, in the terminal or the desktop app, Claude explains each warning and lists the possible fixes. It applies a fix only once you pick it.
 
 **Updating from an older kit.** A kit from before the merge-based sync updates its clone with `git merge --ff-only`, which stops at the first local edit, and the new `bootstrap.ps1` is itself held for review. Run this once by hand, resolve any conflict it reports, then run `bootstrap.ps1 -Apply`, which also refreshes the plugin:
 
@@ -159,7 +159,7 @@ To keep the kit but stop auto-sync, only do step 1 for the `SessionStart` hook.
 | Hook doesn't run | `~/.claude/settings.json` has the `SessionStart` entry and `powershell` is on PATH. Run `bootstrap.ps1` by hand to see the error |
 | `clone failed` | Network, or for a private fork, `gh auth status` |
 | `/toolkit:add-rule` not found | The plugin isn't installed yet: run the bootstrap, restart Claude Code, check `/plugin` |
-| Status line shows `kit! (n)` | Read `warnings` in `~/.claude/claude-kit-sync.json`, fix the cause, then run `bootstrap.ps1 -Apply` |
+| Status line shows `kit! (n)` | Send Claude a message: it explains the warnings and the fixes. Or read `warnings` in `~/.claude/claude-kit-sync.json`, fix the cause, then run `bootstrap.ps1 -Apply` |
 | Status line is empty | Check that `node --version` works in Git Bash, then run `echo {} \| node ~/.claude/statusline.js` |
 | `kit update skipped: local changes ... conflict with upstream` | A local commit clashes with upstream, or an untracked file is in the way. Run `git -C ~/.claude-kit pull --rebase --autostash`, resolve the conflict (or move the untracked file), then `bootstrap.ps1 -Apply` |
 | `a kit update left conflict markers in ...` | Your uncommitted edits are in the stash and in the named files, with markers. Edit those files to the content you want, run `git -C ~/.claude-kit reset -q` (keeps your edits), then `git -C ~/.claude-kit stash drop <ref>` with the ref from the warning. The next launch updates normally |

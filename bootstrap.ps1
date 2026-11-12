@@ -12,7 +12,8 @@
   update runs at most once every 24 hours, upstream changes to files that run code
   (bootstrap.ps1, settings.base.json, statusline.js, plugin hooks, agents and scripts) are held back until a
   manual -Apply, and warnings go to ~/.claude/claude-kit-sync.json (the status line shows
-  them as "kit!").
+  them as "kit!"). The same warnings are printed as one JSON line that the hook hands to
+  Claude as session context, so Claude can explain them at the next message.
 
   The clone is updated with git rebase --autostash, so local commits and uncommitted edits
   are carried over; a conflict is aborted and leaves the clone as it was. Preview only fetches.
@@ -49,6 +50,27 @@ $warnings = New-Object System.Collections.Generic.List[string]
 
 function Say($m) { if (-not $Quiet) { Write-Host $m } }
 function Warn($m) { $warnings.Add($m); Say "! $m" }
+# The status line is not shown everywhere (the desktop app), so the hook also hands the warnings to Claude
+function Get-HookContext($warnings, $kitDir, $statePath) {
+  $count = @($warnings).Count
+  if (-not $count) { return $null }
+  # Claude Code caps additionalContext at 10,000 characters
+  $max = 8000
+  $lines = @("Kit sync (bootstrap.ps1) left $count warning(s). Kit clone: $kitDir. State file: $statePath.")
+  $i = 0
+  foreach ($w in $warnings) {
+    $i++
+    $line = "$i. $w"
+    if ((($lines + $line) -join "`n").Length -gt $max) { $lines += '(more in the state file)'; break }
+    $lines += $line
+  }
+  $payload = [pscustomobject]@{
+    hookSpecificOutput = [pscustomobject]@{ hookEventName = 'SessionStart'; additionalContext = ($lines -join "`n") }
+  }
+  $json = $payload | ConvertTo-Json -Compress -Depth 3
+  # ASCII only, so the console code page cannot garble a path with accents
+  return [regex]::Replace($json, '[^\x00-\x7F]', { param($m) '\u{0:x4}' -f [int][char]$m.Value })
+}
 function HasProp($o, $n) { return $null -ne $o -and $null -ne $o.PSObject.Properties[$n] }
 function SetProp($o, $n, $v) {
   if (HasProp $o $n) { $o.$n = $v } else { $o | Add-Member -NotePropertyName $n -NotePropertyValue $v }
@@ -555,4 +577,10 @@ if ($Apply) {
   [IO.File]::WriteAllText($statePath, (ToJson $newState), $utf8)
 } else {
   Say "`nPreview only. Re-run with -Apply to write."
+}
+
+# 6. Hand the warnings to Claude: the async SessionStart hook delivers this line as session context
+if ($Quiet) {
+  $hookLine = Get-HookContext $warnings $KitDir $statePath
+  if ($hookLine) { [Console]::Out.WriteLine($hookLine) }
 }
