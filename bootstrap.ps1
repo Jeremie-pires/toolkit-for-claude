@@ -9,14 +9,20 @@
     & $HOME\.claude-kit\bootstrap.ps1            # preview
     & $HOME\.claude-kit\bootstrap.ps1 -Apply     # apply
   After that, an async SessionStart hook runs it with -Apply -Quiet. In that mode the
-  git pull runs at most once every 24 hours, upstream changes to files that run code
+  update runs at most once every 24 hours, upstream changes to files that run code
   (bootstrap.ps1, settings.base.json, statusline.js, plugin hooks, agents and scripts) are held back until a
   manual -Apply, and warnings go to ~/.claude/claude-kit-sync.json (the status line shows
   them as "kit!").
 
-  What it touches: ~/.claude/settings.json (merged, backed up), ~/.claude/CLAUDE.md,
-  ~/.claude/statusline.js, ~/.claude/claude-kit-sync.json. The first backup of each file is
-  also kept for good as <file>.pre-kit. It never touches credentials, history or projects.
+  The clone is updated with git rebase --autostash, so local commits and uncommitted edits
+  are carried over; a conflict is aborted and leaves the clone as it was. Preview only fetches.
+
+  What it touches: ~/.claude/settings.json (merged, backed up), ~/.claude/CLAUDE.md and
+  ~/.claude/statusline.js (three-way merged with local edits, backed up; a conflict goes to
+  <file>.kit-merge, never into the file), ~/.claude/claude-kit-base/ (merge bases),
+  ~/.claude/claude-kit-sync.json, and ~/.claude/rules/ (created if missing, never written
+  inside). The first backup of each file is also kept for good as <file>.pre-kit. It never
+  touches credentials, history or projects.
   When CLAUDE_CONFIG_DIR is set, that folder replaces ~/.claude everywhere above.
 #>
 [CmdletBinding()]
@@ -93,6 +99,85 @@ function Set-ConfigDirPaths($base, $configDir) {
 function Get-HeldChanges($kitDir, $pattern) {
   @(& git -C $kitDir diff --name-only 'HEAD...@{u}' 2>$null | Where-Object { $_ -match $pattern })
 }
+# The stash entry git leaves when it could not re-apply the autostash after a rebase, or $null
+function Find-PendingAutostash($kitDir) {
+  @(& git -C $kitDir stash list --format='%gd%x09%gs' 2>$null) |
+    Where-Object { ($_ -split "`t", 2)[1] -eq 'autostash' } |
+    ForEach-Object { ($_ -split "`t", 2)[0] } | Select-Object -First 1
+}
+# git also leaves the failed re-apply in the working tree, with conflict markers in the files that clashed
+function Write-AutostashWarning($kitDir, $ref) {
+  $conflicted = @(& git -C $kitDir diff --name-only --diff-filter=U 2>$null)
+  if ($conflicted.Count) {
+    Warn "a kit update left conflict markers in $($conflicted -join ', ') in ${kitDir}; your version from before is saved in $ref. Resolve the markers, run git -C $kitDir reset -q, then git -C $kitDir stash drop $ref; deployed files are not updated until then"
+  } else {
+    Warn "your edits from before a kit update are saved in $ref; once the files in $kitDir hold what you want, run git -C $kitDir stash drop $ref; deployed files are not updated until then"
+  }
+}
+# Fetch, hold upstream code changes for review, then replay local commits and uncommitted edits
+# on top of upstream. A conflict is aborted, so the clone is left exactly as it was.
+function Update-KitClone($kitDir) {
+  $result = [pscustomobject]@{ updated = $false; pulled = $false; stashPending = $false }
+  # Updating now would bury the parked edits under more upstream changes
+  $pending = Find-PendingAutostash $kitDir
+  if ($pending) {
+    $result.stashPending = $true
+    Write-AutostashWarning $kitDir $pending
+    return $result
+  }
+  $headBefore = (& git -C $kitDir rev-parse HEAD 2>$null)
+  $null = & git -C $kitDir -c http.lowSpeedLimit=1000 -c http.lowSpeedTime=15 fetch --quiet 2>&1
+  $held = @()
+  if ($LASTEXITCODE -eq 0) {
+    $held = Get-HeldChanges $kitDir $reviewPattern
+  }
+  if ($LASTEXITCODE -ne 0) {
+    Warn 'git fetch skipped (offline, auth, or no upstream branch); using the local copy'
+    return $result
+  }
+  if ($held.Count -and ($Quiet -or -not $Apply)) {
+    # lastPull is left as is, so the check runs again at every launch until the change is reviewed
+    Warn "upstream changes to $($held -join ', ') wait for review: read git -C $kitDir log -p HEAD..@{u}, then run bootstrap.ps1 -Apply"
+    return $result
+  }
+  # Preview writes nothing, and a rebase rewrites local commits and stashes edits
+  if (-not $Apply) {
+    $behind = [int](& git -C $kitDir rev-list --count 'HEAD..@{u}' 2>$null)
+    $ahead = [int](& git -C $kitDir rev-list --count '@{u}..HEAD' 2>$null)
+    $carry = if (& git -C $kitDir status --porcelain --untracked-files=no 2>$null) { ', carrying uncommitted edits' } else { '' }
+    if (-not $behind) { Say '= kit up to date' }
+    elseif ($ahead) { Say "~ would rebase $ahead local commit(s) onto $behind upstream commit(s)$carry" }
+    else { Say "~ would fast-forward the kit by $behind upstream commit(s)$carry" }
+    return $result
+  }
+  foreach ($f in $held) { Say "~ upstream change to $f (runs code on this machine)" }
+  $null = & git -C $kitDir rebase --autostash --quiet '@{u}' 2>&1
+  if ($LASTEXITCODE -ne 0) {
+    # Also re-applies the autostash; fails harmlessly when git refused before the rebase started
+    $null = & git -C $kitDir rebase --abort 2>&1
+    Warn "kit update skipped: local changes in $kitDir conflict with upstream; run git -C $kitDir pull --rebase --autostash and resolve, then bootstrap.ps1 -Apply"
+    return $result
+  }
+  $result.updated = $true
+  $result.pulled = $headBefore -ne (& git -C $kitDir rev-parse HEAD 2>$null)
+  # The rebase succeeded but the edits did not fit back: git parked them in the stash
+  $pending = Find-PendingAutostash $kitDir
+  if ($pending) {
+    $result.stashPending = $true
+    Write-AutostashWarning $kitDir $pending
+  }
+  return $result
+}
+# Kit-deployed files belong to the kit; machine-local additions go in rules/, which Claude Code
+# loads in every project and the kit never writes inside
+function Get-RulesHint($claudeDir) { "machine-local content belongs in $(Join-Path $claudeDir 'rules')" }
+function Initialize-RulesDir($claudeDir) {
+  $rules = Join-Path $claudeDir 'rules'
+  if (Test-Path $rules) { return }
+  if (-not $Apply) { Say "~ would create $rules"; return }
+  New-Item -ItemType Directory -Force $rules | Out-Null
+  Say "+ created $rules"
+}
 function FileHash($p) { if (Test-Path $p) { return (Get-FileHash $p).Hash } return '' }
 function Backup($p) {
   if (-not (Test-Path $p)) { return }
@@ -107,28 +192,140 @@ function Backup($p) {
   Get-ChildItem (Split-Path $p -Parent) -Filter "$leaf.bak-*" | Sort-Object LastWriteTime -Descending |
     Select-Object -Skip $keepBackups | Remove-Item -Force
 }
-# Kit-owned files: overwrite only if the local copy is the one the kit wrote last time.
-# A local edit is kept (with a warning) in -Quiet mode, and backed up then replaced otherwise.
-function Sync-File($src, $dst, $key) {
+# Records the kit's version as the next merge base, and $dst as what the kit last wrote
+function Save-KitBase($src, $dst, $key) {
+  $basePath = Join-Path (Join-Path $claude 'claude-kit-base') $key
+  New-Item -ItemType Directory -Force (Split-Path $basePath) | Out-Null
+  Copy-Item $src $basePath -Force
+  $applied[$key] = FileHash $dst
+  Remove-Item "$dst.kit-merge" -Force -ErrorAction SilentlyContinue
+}
+function Write-KitFile($from, $src, $dst, $key) {
+  Backup $dst
+  Copy-Item $from $dst -Force
+  Save-KitBase $src $dst $key
+}
+# Raw bytes of git's stdout: PowerShell would decode it as text and change line endings
+function Get-GitBytes($kitDir, [string[]]$gitArgs) {
+  $psi = New-Object Diagnostics.ProcessStartInfo 'git'
+  $psi.Arguments = (@('-C', "`"$kitDir`"") + $gitArgs) -join ' '
+  $psi.UseShellExecute = $false
+  $psi.RedirectStandardOutput = $true
+  $psi.RedirectStandardError = $true
+  $psi.CreateNoWindow = $true
+  try { $p = [Diagnostics.Process]::Start($psi) } catch { return $null }
+  $ms = New-Object IO.MemoryStream
+  $p.StandardOutput.BaseStream.CopyTo($ms)
+  $null = $p.StandardError.ReadToEnd()
+  $p.WaitForExit()
+  if ($p.ExitCode -ne 0) { return $null }
+  return , $ms.ToArray()
+}
+# Installs from before merge bases only recorded the hash of what the kit wrote. Find that version
+# in the clone's history, as checked out (--filters applies the clone's line-ending settings) or raw.
+function Find-BaseInHistory($kitDir, $key, $hash) {
+  if (-not $hash) { return $null }
+  $sha256 = [Security.Cryptography.SHA256]::Create()
+  foreach ($rev in @(& git -C $kitDir log --format=%H -- "global/$key" 2>$null)) {
+    foreach ($mode in @('--filters', '-p')) {
+      $bytes = Get-GitBytes $kitDir @('cat-file', $mode, "${rev}:global/$key")
+      if ($null -eq $bytes) { continue }
+      if ((($sha256.ComputeHash($bytes) | ForEach-Object { $_.ToString('X2') }) -join '') -eq $hash) { return , $bytes }
+    }
+  }
+  return $null
+}
+# Three-way merge into a temp copy of $dst; returns git merge-file's exit code
+# (0 clean, 1 to 127 conflicts, anything else an error: the count is capped at 127 and a fatal error exits 128)
+function Invoke-MergeFile($dst, $basePath, $src, $out) {
+  Copy-Item $dst $out -Force
+  $null = & git merge-file -q -L local -L kit-base -L kit $out $basePath $src 2>&1
+  return $LASTEXITCODE
+}
+# A text merge of code can be clean for git and still not parse; returns why it cannot be deployed, or $null
+function Test-ScriptSyntax($path) {
+  if ([IO.Path]::GetExtension($path) -ne '.js') { return $null }
+  $node = Get-Command node -CommandType Application -ErrorAction SilentlyContinue | Select-Object -First 1
+  if (-not $node) { return 'node is not on PATH, so the merged script cannot be checked' }
+  $null = & $node.Source --check $path 2>&1
+  if ($LASTEXITCODE -ne 0) { return 'the merged script fails node --check' }
+  return $null
+}
+# Kit-owned files. The kit's version from the last write is the merge base; without it a local edit
+# cannot be told from an upstream one. Local edits are merged with kit changes, never dropped, and a
+# conflict is left in <dst>.kit-merge instead of the deployed file.
+function Merge-KitFile($src, $dst, $key) {
   if (-not (Test-Path $src)) { return }
+  $basePath = Join-Path (Join-Path $claude 'claude-kit-base') $key
+  $mergePath = "$dst.kit-merge"
   $srcHash = FileHash $src
   $dstHash = FileHash $dst
-  if ($srcHash -eq $dstHash) { $applied[$key] = $srcHash; Say "= $dst (unchanged)"; return }
-  $editedLocally = $dstHash -and $applied[$key] -and ($dstHash -ne $applied[$key])
-  if (-not $Apply) {
-    $note = ''
-    if ($editedLocally) { $note = ' (local edits will be backed up)' }
-    Say "~ would update $dst$note"
+  $baseHash = FileHash $basePath
+
+  if (-not $dstHash) {
+    if (-not $Apply) { Say "~ would create $dst"; return }
+    Write-KitFile $src $src $dst $key
+    Say "+ created $dst"
     return
   }
-  if ($editedLocally -and $Quiet) {
-    Warn "$dst was edited outside the kit; not replaced. Move the change to the kit, then run bootstrap.ps1 -Apply."
+  if ($dstHash -eq $srcHash) {
+    if ($Apply) { Save-KitBase $src $dst $key }
+    Say "= $dst (unchanged)"
     return
   }
-  Backup $dst
-  Copy-Item $src $dst -Force
-  $applied[$key] = $srcHash
-  Say "+ updated $dst"
+  if ($baseHash -and $srcHash -eq $baseHash) { Say "= $dst (kit unchanged, local edits kept)"; return }
+
+  $notEdited = if ($baseHash) { $dstHash -eq $baseHash } else { -not $applied[$key] -or $dstHash -eq $applied[$key] }
+  if ($notEdited) {
+    if (-not $Apply) { Say "~ would update $dst"; return }
+    Write-KitFile $src $src $dst $key
+    Say "+ updated $dst"
+    return
+  }
+
+  $recovered = $null
+  if (-not $baseHash) {
+    $bytes = Find-BaseInHistory $KitDir $key $applied[$key]
+    if ($null -eq $bytes) {
+      if ($Apply -and $Force) {
+        Write-KitFile $src $src $dst $key
+        Say "+ updated $dst (local edits backed up)"
+        return
+      }
+      Warn "$dst was edited outside the kit and the version it started from is unknown; not replaced. Move the change to the kit, or run bootstrap.ps1 -Apply -Force to back it up and replace it; $(Get-RulesHint $claude)"
+      return
+    }
+    $recovered = [IO.Path]::GetTempFileName()
+    [IO.File]::WriteAllBytes($recovered, $bytes)
+    $basePath = $recovered
+  }
+
+  # Same extension as $dst, so node --check reads it as the same kind of script
+  $tmp = Join-Path ([IO.Path]::GetTempPath()) ("kit-merge-$([guid]::NewGuid())" + [IO.Path]::GetExtension($dst))
+  try {
+    $code = Invoke-MergeFile $dst $basePath $src $tmp
+    $unusable = $null
+    if ($code -eq 0) { $unusable = Test-ScriptSyntax $tmp }
+    if ($code -lt 0 -or $code -gt 127) {
+      Warn "git merge-file failed on $dst (exit code $code); kept as is"
+    } elseif ($code -gt 0 -or $unusable) {
+      if (-not $Apply) { Say "~ conflict, would write $mergePath"; return }
+      Copy-Item $tmp $mergePath -Force
+      if ($unusable) {
+        Warn "$dst has local edits merged with kit changes, but $unusable; kept as is. Fix $mergePath, copy it over $dst, then run bootstrap.ps1 -Apply; $(Get-RulesHint $claude)"
+      } else {
+        Warn "$dst has local edits that clash with kit changes; kept as is. Resolve the conflict markers in $mergePath, copy it over $dst, then run bootstrap.ps1 -Apply; $(Get-RulesHint $claude)"
+      }
+    } elseif (-not $Apply) {
+      Say "~ would merge kit changes into $dst (local edits kept)"
+    } else {
+      Write-KitFile $tmp $src $dst $key
+      Say "+ merged kit changes into $dst (local edits kept, backup made)"
+    }
+  } finally {
+    Remove-Item $tmp -Force -ErrorAction SilentlyContinue
+    if ($recovered) { Remove-Item $recovered -Force -ErrorAction SilentlyContinue }
+  }
 }
 
 if (-not (Test-Path $claude)) { New-Item -ItemType Directory -Force $claude | Out-Null }
@@ -140,31 +337,22 @@ if (HasProp $state 'applied') { foreach ($p in $state.applied.PSObject.Propertie
 $lastPull = [datetime]::MinValue
 if (HasProp $state 'lastPull') { [void][datetime]::TryParse($state.lastPull, [ref]$lastPull) }
 
-# 1. Get / update the kit (fast-forward only; offline is fine; throttled in -Quiet mode)
+# 1. Get / update the kit (rebase local work on upstream; offline is fine; throttled in -Quiet mode)
 $pulled = $false
+# Edits parked in the autostash: the clone's tree lacks them, so deployed files must not follow it
+$stashPending = $false
 if (Test-Path (Join-Path $KitDir '.git')) {
   $due = $Force -or -not $Quiet -or ((Get-Date) - $lastPull) -ge $pullEvery
   if ($due) {
-    $headBefore = (& git -C $KitDir rev-parse HEAD 2>$null)
-    $null = & git -C $KitDir -c http.lowSpeedLimit=1000 -c http.lowSpeedTime=15 fetch --quiet 2>&1
-    $held = @()
-    if ($LASTEXITCODE -eq 0) {
-      $held = Get-HeldChanges $KitDir $reviewPattern
-    }
-    if ($LASTEXITCODE -ne 0) {
-      Warn 'git fetch skipped (offline, auth, or no upstream branch); using the local copy'
-    } elseif ($held.Count -and ($Quiet -or -not $Apply)) {
-      # lastPull is left as is, so the check runs again at every launch until the change is reviewed
-      Warn "upstream changes to $($held -join ', ') wait for review: read git -C $KitDir log -p HEAD..@{u}, then run bootstrap.ps1 -Apply"
-    } else {
-      foreach ($f in $held) { Say "~ upstream change to $f (runs code on this machine)" }
-      $null = & git -C $KitDir merge --ff-only --quiet '@{u}' 2>&1
-      if ($LASTEXITCODE -eq 0) {
-        $lastPull = Get-Date
-        $pulled = $headBefore -ne (& git -C $KitDir rev-parse HEAD 2>$null)
-      } else {
-        Warn 'git merge skipped (local changes or diverged history in the kit); using the local copy'
-      }
+    $sync = Update-KitClone $KitDir
+    if ($sync.updated) { $lastPull = Get-Date }
+    $pulled = $sync.pulled
+    $stashPending = $sync.stashPending
+  } else {
+    $pending = Find-PendingAutostash $KitDir
+    if ($pending) {
+      $stashPending = $true
+      Write-AutostashWarning $KitDir $pending
     }
   }
 } else {
@@ -287,9 +475,14 @@ if ($null -eq $base) {
   }
 }
 
-# 3. Global rules and status line script
-Sync-File (Join-Path $KitDir 'global\CLAUDE.md') (Join-Path $claude 'CLAUDE.md') 'CLAUDE.md'
-Sync-File (Join-Path $KitDir 'global\statusline.js') (Join-Path $claude 'statusline.js') 'statusline.js'
+# 3. Global rules, status line script, and the folder for machine-local rules
+Initialize-RulesDir $claude
+if ($stashPending) {
+  Say "~ $claude\CLAUDE.md and statusline.js not updated while local edits wait in the kit's stash"
+} else {
+  Merge-KitFile (Join-Path $KitDir 'global\CLAUDE.md') (Join-Path $claude 'CLAUDE.md') 'CLAUDE.md'
+  Merge-KitFile (Join-Path $KitDir 'global\statusline.js') (Join-Path $claude 'statusline.js') 'statusline.js'
+}
 
 $shadowed = @(Find-ShadowedSkills (Join-Path $claude 'skills') $KitDir)
 if ($shadowed.Count) {
