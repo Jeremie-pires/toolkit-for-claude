@@ -110,7 +110,7 @@
 - [x] The one-time rollout command for existing installs is documented.
 
 **Verification:**
-- [ ] The user reads the README diff
+- [x] The user reads the README diff
 - [x] `toolkit:humanizer` pass on the new README text
 
 **Dependencies:** Task 6
@@ -118,6 +118,6 @@
 **Scope:** S
 
 ## Checkpoint 3
-- [ ] Spec success criteria 1 to 7 met
-- [ ] `/toolkit:save-state`; commit; push (asks first)
-- [ ] Rollout on this machine: `git -C ~/.claude-kit pull --rebase --autostash`, resolve if needed, then `bootstrap.ps1 -Apply`; the local edit to `global/CLAUDE.md` and the untracked `Capgemini/` survive
+- [x] Spec success criteria 1 to 7 met
+- [x] `/toolkit:save-state`; commit; push (asks first)
+- [x] Rollout on this machine: `git -C ~/.claude-kit pull --rebase --autostash`, resolve if needed, then `bootstrap.ps1 -Apply`; the local edit to `global/CLAUDE.md` and the untracked `Capgemini/` survive (the edit hit the autostash conflict; it now lives in `~/.claude/rules/`, the ownership rule's home; the plugin had to be refreshed by hand, which led to the plugin-refresh fix)

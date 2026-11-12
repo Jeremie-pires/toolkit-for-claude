@@ -2,17 +2,17 @@
 _Updated: 2026-11-12_
 
 ## Done
-- Safe sync (spec `docs/specs/SPEC-safe-sync.md`, plan `tasks/plan-safe-sync.md`), Tasks 1 to 7 and Checkpoints 1 and 2:
+- Safe sync (spec `docs/specs/SPEC-safe-sync.md`, plan `tasks/plan-safe-sync.md`): Tasks 1 to 7 and Checkpoints 1 to 3, rolled out on one machine:
   - The kit clone is updated with `git rebase --autostash`. A conflicting local commit, or an untracked file in the way, aborts the rebase and leaves the clone as it was. Uncommitted edits that clash on re-apply stay in the stash; the kit then skips clone updates and deployed files until the user follows the warning's recovery steps.
   - `CLAUDE.md` and `statusline.js` are merged three ways (`git merge-file`) against the kit's version from the last sync, stored in `claude-kit-base/`. Conflicts go to `<file>.kit-merge`, never into the deployed file. A merged `statusline.js` must pass `node --check`. Installs from before merge bases find their base in the clone's history by hash, line endings included.
-  - Preview fetches but never rebases. `-Apply` creates `~/.claude/rules/`, the documented home for machine-local content.
+  - Preview fetches but never rebases. `-Apply` creates `~/.claude/rules/`, the documented home for machine-local content. The `toolkit` plugin is refreshed whenever it is older than the upstream commit the clone holds, so a clone updated by hand is covered.
   - README, script header and troubleshooting rows cover every new warning and the one-time manual update for existing installs.
 
 ## Current state
-Plugin `toolkit`: 5 commands, 3 skills, 1 agent (`researcher`), 1 script (`dream-digest.mjs`). `bootstrap.ps1` syncs settings, the rules file and the status line without dropping local edits. Tests: `node --test`, `tests/review-guard.tests.ps1`, `tests/bootstrap-checks.tests.ps1` and `tests/safe-sync.tests.ps1` (129 checks, two of them end to end). All pass.
+Plugin `toolkit`: 5 commands, 3 skills, 1 agent (`researcher`), 1 script (`dream-digest.mjs`). `bootstrap.ps1` syncs settings, the rules file and the status line without dropping local edits. Tests: `node --test`, `tests/review-guard.tests.ps1`, `tests/bootstrap-checks.tests.ps1` and `tests/safe-sync.tests.ps1` (135 checks, two of them end to end). All pass.
 
 ## Next steps
-1. Safe sync Checkpoint 3: commit, push, then on each machine run `git -C ~/.claude-kit pull --rebase --autostash` once by hand, resolve any conflict, and run `bootstrap.ps1 -Apply`; check that local edits and untracked files in the clone survive.
+1. Safe sync rollout on the remaining machines (done on one): run `git -C ~/.claude-kit pull --rebase --autostash` once by hand, resolve any conflict, and run `bootstrap.ps1 -Apply`; check that local edits and untracked files in the clone survive and that the plugin is refreshed.
 2. Researcher Task 4: evaluation on 3 questions.
 3. Dream Task 6: once real sessions show a recurring pattern, run `/toolkit:dream` and accept one proposal; then tick Checkpoints 3 and 4.
 4. Later: digest ignores "no match" exits; CI; a Node bootstrap for every OS.
@@ -53,3 +53,4 @@ Plugin `toolkit`: 5 commands, 3 skills, 1 agent (`researcher`), 1 script (`dream
 - 2026-11-12 A merged `statusline.js` is deployed only after `node --check` — a clean text merge can still break code.
 - 2026-11-12 Preview never rebases — it promises to write nothing, and a rebase rewrites local commits.
 - 2026-11-12 An edited file whose base is not in the history is kept in every mode; only `-Apply -Force` replaces it — no mode drops an edit silently.
+- 2026-11-12 The plugin is refreshed when it is behind the clone, not only after a pull in the same run, and never while upstream commits wait for review — a manual update or a failed refresh used to leave it stale, and the refresh installs the fork's latest commit.

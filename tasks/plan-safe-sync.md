@@ -55,7 +55,7 @@ See [todo-safe-sync.md](todo-safe-sync.md) for acceptance criteria and verificat
 - [x] Task 7: README, script header, state
 
 ### Checkpoint 3 (complete)
-- [ ] Spec success criteria 1 to 7 met; `/toolkit:save-state`; push; rollout on this machine
+- [x] Spec success criteria 1 to 7 met; `/toolkit:save-state`; push; rollout on this machine
 
 ## Risks and mitigations
 | Risk | Impact | Mitigation |
